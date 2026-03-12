@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.aminmart.moneymanager">
+
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    
+    <application
+        android:name=".MoneyManagerApplication"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme"
+        android:requestLegacyExternalStorage="true">
+
+        <!-- Main Activity -->
+        <activity
+            android:name=".presentation.activities.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Dashboard Activity -->
+        <activity
+            android:name=".presentation.activities.DashboardActivity"
+            android:exported="false" />
+
+        <!-- Transactions Activity -->
+        <activity
+            android:name=".presentation.activities.TransactionsActivity"
+            android:exported="false" />
+
+        <!-- Add Transaction Activity -->
+        <activity
+            android:name=".presentation.activities.AddTransactionActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Budget Activity -->
+        <activity
+            android:name=".presentation.activities.BudgetActivity"
+            android:exported="false" />
+
+        <!-- Statistics Activity -->
+        <activity
+            android:name=".presentation.activities.StatisticsActivity"
+            android:exported="false" />
+
+        <!-- Settings Activity -->
+        <activity
+            android:name=".presentation.activities.SettingsActivity"
+            android:exported="false" />
+
+        <!-- Import CSV Activity -->
+        <activity
+            android:name=".presentation.activities.ImportCsvActivity"
+            android:exported="false" />
+
+        <!-- Export Report Activity -->
+        <activity
+            android:name=".presentation.activities.ExportReportActivity"
+            android:exported="false" />
+
+        <!-- File Provider for sharing files -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+    </application>
+</manifest>
