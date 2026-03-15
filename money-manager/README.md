@@ -168,6 +168,111 @@ make uninstall
 make help
 ```
 
+## Keystore & Release Build
+
+### Generate Debug Keystore (Automatic)
+
+The debug keystore is automatically generated during `make build`. It's stored at:
+```
+build/debug.keystore
+```
+
+**Debug keystore credentials:**
+- Keystore password: `android`
+- Key alias: `androiddebugkey`
+- Key password: `android`
+
+### Generate Release Keystore (Manual)
+
+For production releases, create a signed release keystore:
+
+```bash
+# Generate a new release keystore
+keytool -genkey -v \
+    -keystore build/release.keystore \
+    -alias release \
+    -keyalg RSA \
+    -keysize 2048 \
+    -validity 10000 \
+    -storetype pkcs12
+```
+
+You will be prompted to:
+1. Enter keystore password
+2. Enter your name (CN)
+3. Enter organization unit (OU)
+4. Enter organization name (O)
+5. Enter city (L)
+6. Enter state/province (ST)
+7. Enter country code (C)
+8. Confirm keystore password
+
+**Important:** Keep your release keystore secure! If you lose it, you cannot update your app on Google Play Store.
+
+### Build Signed Release APK
+
+```bash
+# Set keystore passwords as environment variables
+export KEYSTORE_PASSWORD=your_keystore_password
+export KEY_PASSWORD=your_key_password
+
+# Build signed release APK
+make build-release
+
+# The signed APK will be at: money-manager-signed.apk
+```
+
+### Verify Release APK Signature
+
+```bash
+# Using apksigner
+$ANDROID_HOME/build-tools/33.0.2/apksigner verify --verbose money-manager-signed.apk
+
+# Using jarsigner (alternative)
+jarsigner -verify -verbose -certs money-manager-signed.apk
+```
+
+### Keystore Security Best Practices
+
+1. **Backup your keystore** - Store in multiple secure locations
+2. **Never commit keystore to version control** - Add to `.gitignore`
+3. **Use strong passwords** - Minimum 12 characters
+4. **Keep credentials separate** - Don't store passwords in code
+5. **Document keystore info** - Store alias and validity period securely
+
+### Example .gitignore Entry
+
+```gitignore
+# Keystores
+*.keystore
+*.jks
+build/release.keystore
+
+# Build outputs
+build/
+*.apk
+*.aab
+```
+
+### Quick Reference: Keystore Commands
+
+```bash
+# List keystore contents
+keytool -list -v -keystore build/release.keystore -alias release
+
+# Check certificate validity
+keytool -list -v -keystore build/release.keystore -alias release | grep "Valid from"
+
+# Export certificate
+keytool -exportcert -keystore build/release.keystore -alias release -file release_cert.crt
+
+# Change keystore password
+keytool -storepasswd -keystore build/release.keystore
+
+# Change key password
+keytool -keypasswd -keystore build/release.keystore -alias release
+```
+
 ## Usage Guide
 
 ### Adding a Transaction

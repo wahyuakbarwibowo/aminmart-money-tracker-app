@@ -229,7 +229,7 @@ $(APK_SIGNED_OUTPUT): $(APK_ALIGNED)
 		$(APK_ALIGNED)
 	@echo "Release APK signed: $(APK_SIGNED_OUTPUT)"
 
-# Main build target
+# Main build target (debug)
 .PHONY: build
 build: check-deps deps $(APK_OUTPUT)
 	@echo ""
@@ -238,6 +238,19 @@ build: check-deps deps $(APK_OUTPUT)
 	@echo "=========================================="
 	@echo "APK: $(APK_OUTPUT)"
 	@echo "Size: $$(ls -lh $(APK_OUTPUT) | awk '{print $$5}')"
+	@echo ""
+
+# Build signed release APK
+.PHONY: build-release
+build-release: check-deps deps $(APK_SIGNED_OUTPUT)
+	@echo ""
+	@echo "=========================================="
+	@echo "RELEASE BUILD SUCCESSFUL"
+	@echo "=========================================="
+	@echo "APK: $(APK_SIGNED_OUTPUT)"
+	@echo "Size: $$(ls -lh $(APK_SIGNED_OUTPUT) | awk '{print $$5}')"
+	@echo ""
+	@echo "Remember to backup your keystore!"
 	@echo ""
 
 # Install APK to device
@@ -297,27 +310,38 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  build       Build the APK (default)"
-	@echo "  install     Install APK to connected device"
-	@echo "  run         Build, install and run the app"
-	@echo "  log         View logcat"
-	@echo "  log-filter  View filtered logcat"
-	@echo "  uninstall   Uninstall the app from device"
-	@echo "  clean       Remove build files"
-	@echo "  distclean   Remove build files and downloaded libs"
-	@echo "  deps        Download all dependencies"
-	@echo "  check-deps  Check if all required tools are available"
-	@echo "  help        Show this help message"
+	@echo "  build         Build the APK (default, debug signed)"
+	@echo "  build-release Build signed release APK (requires release.keystore)"
+	@echo "  install       Install APK to connected device"
+	@echo "  run           Build, install and run the app"
+	@echo "  log           View logcat"
+	@echo "  log-filter    View filtered logcat"
+	@echo "  uninstall     Uninstall the app from device"
+	@echo "  clean         Remove build files"
+	@echo "  distclean     Remove build files and downloaded libs"
+	@echo "  deps          Download all dependencies"
+	@echo "  check-deps    Check if all required tools are available"
+	@echo "  verify        Verify APK signature"
+	@echo "  devices       List connected devices"
+	@echo "  help          Show this help message"
 	@echo ""
 	@echo "Environment Variables:"
 	@echo "  ANDROID_SDK_ROOT  Path to Android SDK (default: ~/Android/Sdk)"
 	@echo "  ANDROID_HOME      Alternative path to Android SDK"
+	@echo "  KEYSTORE_PASSWORD Password for release keystore (for build-release)"
+	@echo "  KEY_PASSWORD      Password for release key (for build-release)"
 	@echo ""
 	@echo "Requirements:"
 	@echo "  - Android SDK (API 33)"
 	@echo "  - Build Tools 33.0.2"
 	@echo "  - Kotlin Compiler (kotlinc)"
 	@echo "  - adb (Android Debug Bridge)"
+	@echo "  - keytool (for keystore generation)"
+	@echo ""
+	@echo "Release Build:"
+	@echo "  1. Generate keystore: keytool -genkey -v -keystore build/release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000"
+	@echo "  2. Set passwords: export KEYSTORE_PASSWORD=xxx && export KEY_PASSWORD=xxx"
+	@echo "  3. Build: make build-release"
 	@echo ""
 
 # Verify APK
