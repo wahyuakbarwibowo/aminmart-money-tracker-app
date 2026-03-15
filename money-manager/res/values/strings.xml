@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Money Manager</string>
+    
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_transactions">Transactions</string>
+    <string name="nav_budget">Budget</string>
+    <string name="nav_statistics">Statistics</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Dashboard -->
+    <string name="total_balance">Total Balance</string>
+    <string name="total_income">Total Income</string>
+    <string name="total_expense">Total Expense</string>
+    <string name="month_income">This Month</string>
+    <string name="month_expense">This Month</string>
+    <string name="recent_transactions">Recent Transactions</string>
+    <string name="no_transactions">No transactions yet</string>
+    
+    <!-- Transactions -->
+    <string name="add_transaction">Add Transaction</string>
+    <string name="edit_transaction">Edit Transaction</string>
+    <string name="delete_transaction">Delete Transaction</string>
+    <string name="transaction_type">Transaction Type</string>
+    <string name="income">Income</string>
+    <string name="expense">Expense</string>
+    <string name="amount">Amount</string>
+    <string name="category">Category</string>
+    <string name="description">Description</string>
+    <string name="date">Date</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Budget -->
+    <string name="budget_planner">Budget Planner</string>
+    <string name="add_budget">Add Budget</string>
+    <string name="edit_budget">Edit Budget</string>
+    <string name="monthly_budget">Monthly Budget</string>
+    <string name="spent">Spent</string>
+    <string name="remaining">Remaining</string>
+    <string name="over_budget">Over Budget!</string>
+    
+    <!-- Statistics -->
+    <string name="statistics">Statistics</string>
+    <string name="expense_by_category">Expense by Category</string>
+    <string name="monthly_trend">Monthly Trend</string>
+    
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="backup_restore">Backup &amp; Restore</string>
+    <string name="auto_backup">Auto Backup</string>
+    <string name="backup_now">Backup Now</string>
+    <string name="restore">Restore</string>
+    <string name="import_csv">Import CSV</string>
+    <string name="export_report">Export Report</string>
+    
+    <!-- Messages -->
+    <string name="success_saved">Saved successfully</string>
+    <string name="success_deleted">Deleted successfully</string>
+    <string name="error_save">Failed to save</string>
+    <string name="error_delete">Failed to delete</string>
+    <string name="confirm_delete">Are you sure you want to delete?</string>
+    
+    <!-- Categories - Income -->
+    <string name="cat_salary">Salary</string>
+    <string name="cat_business">Business</string>
+    <string name="cat_investment">Investment</string>
+    <string name="cat_gift">Gift</string>
+    <string name="cat_other_income">Other Income</string>
+    
+    <!-- Categories - Expense -->
+    <string name="cat_food">Food &amp; Drink</string>
+    <string name="cat_transport">Transportation</string>
+    <string name="cat_shopping">Shopping</string>
+    <string name="cat_entertainment">Entertainment</string>
+    <string name="cat_bills">Bills &amp; Utilities</string>
+    <string name="cat_health">Health</string>
+    <string name="cat_education">Education</string>
+    <string name="cat_housing">Housing</string>
+    <string name="cat_other_expense">Other Expense</string>
+</resources>

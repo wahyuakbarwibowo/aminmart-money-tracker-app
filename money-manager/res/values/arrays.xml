@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Transaction Types -->
+    <string-array name="transaction_types">
+        <item>All Types</item>
+        <item>Income</item>
+        <item>Expense</item>
+    </string-array>
+
+    <!-- Income Categories -->
+    <string-array name="income_categories">
+        <item>Salary</item>
+        <item>Business</item>
+        <item>Investment</item>
+        <item>Gift</item>
+        <item>Other</item>
+    </string-array>
+
+    <!-- Expense Categories -->
+    <string-array name="expense_categories">
+        <item>Food &amp; Drink</item>
+        <item>Transportation</item>
+        <item>Shopping</item>
+        <item>Entertainment</item>
+        <item>Bills &amp; Utilities</item>
+        <item>Health</item>
+        <item>Education</item>
+        <item>Housing</item>
+        <item>Other</item>
+    </string-array>
+
+    <!-- All Categories -->
+    <string-array name="all_categories">
+        <item>All Categories</item>
+        <item>Salary</item>
+        <item>Business</item>
+        <item>Investment</item>
+        <item>Gift</item>
+        <item>Food &amp; Drink</item>
+        <item>Transportation</item>
+        <item>Shopping</item>
+        <item>Entertainment</item>
+        <item>Bills &amp; Utilities</item>
+        <item>Health</item>
+        <item>Education</item>
+        <item>Housing</item>
+        <item>Other</item>
+    </string-array>
+
+    <!-- Budget Periods -->
+    <string-array name="budget_periods">
+        <item>Weekly</item>
+        <item>Monthly</item>
+        <item>Yearly</item>
+    </string-array>
+
+    <!-- Export Formats -->
+    <string-array name="export_formats">
+        <item>CSV</item>
+        <item>Excel (.xlsx)</item>
+    </string-array>
+
+    <!-- Time Periods -->
+    <string-array name="time_periods">
+        <item>All Time</item>
+        <item>Current Month</item>
+        <item>Last Month</item>
+        <item>Last 3 Months</item>
+        <item>Last 6 Months</item>
+        <item>Current Year</item>
+        <item>Custom Range</item>
+    </string-array>
+
+    <!-- Statistics Periods -->
+    <string-array name="statistics_periods">
+        <item>Current Month</item>
+        <item>Last Month</item>
+        <item>Last 3 Months</item>
+        <item>Last 6 Months</item>
+        <item>Current Year</item>
+    </string-array>
+
+    <!-- Backup Formats -->
+    <string-array name="backup_formats">
+        <item>JSON</item>
+        <item>CSV</item>
+    </string-array>
+</resources>
