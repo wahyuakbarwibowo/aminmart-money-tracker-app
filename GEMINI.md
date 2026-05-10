@@ -17,28 +17,30 @@ A unique characteristic of this project is its build system. It does **not** use
 
 ## Building and Running
 
-All commands should be run from the `money-manager/` directory. Ensure you have the Android SDK, Kotlin compiler, and JDK properly configured.
+The project has been migrated to use **Gradle** as the primary build system, but the `Makefile` remains available as a convenient CLI wrapper. Ensure you have the Android SDK and Gradle (or use the provided wrapper if available) configured.
 
 ### Main Commands
 
 - **Build the app (debug):**
   ```bash
   make build
+  # or directly via gradle
+  ./gradlew assembleDebug
   ```
 
 - **Install and run on a connected device:**
   ```bash
   make run
-  ```
-
-- **Download dependencies:**
-  ```bash
-  make deps
+  # or directly via gradle
+  ./gradlew installDebug
+  adb shell am start -n com.aminmart.moneymanager/com.aminmart.moneymanager.presentation.activities.MainActivity
   ```
 
 - **Clean the project:**
   ```bash
   make clean
+  # or
+  ./gradlew clean
   ```
 
 - **View logs:**
@@ -46,21 +48,23 @@ All commands should be run from the `money-manager/` directory. Ensure you have 
   make log
   ```
 
-For a full list of commands, see the `Makefile` or run `make help`.
+For a full list of commands, see the `Makefile` or run `make help`. Dependencies are now automatically managed by Gradle.
 
 ## Development Conventions
 
 - **Project Structure:**
-  - `src/domain/`: Contains business logic and models (pure Kotlin).
+  - `app/src/main/java/com/aminmart/moneymanager/domain/`: Contains business logic and models (pure Kotlin).
     - `model/`: Defines core entities like `Transaction`, `Budget`.
     - `repository/`: Defines interfaces for data sources.
     - `usecase/`: Contains specific business operations.
-  - `src/data/`: Implements the repository interfaces and handles data sources.
+  - `app/src/main/java/com/aminmart/moneymanager/data/`: Implements the repository interfaces and handles data sources.
     - `database/`: SQLite database setup and access.
     - `repository/`: Concrete implementations of the domain repositories.
-  - `src/presentation/`: Handles the UI and user interaction.
+  - `app/src/main/java/com/aminmart/moneymanager/presentation/`: Handles the UI and user interaction.
     - `activities/`: Android Activities for each screen.
     - `viewmodels/`: Manages UI-related data and state.
+  - `app/src/main/res/`: Android resources (layouts, drawables, values).
+  - `app/src/main/AndroidManifest.xml`: Android app manifest.
 
 - **Adding a Feature (General Flow):**
   1.  Define the model in the `domain/model` directory.

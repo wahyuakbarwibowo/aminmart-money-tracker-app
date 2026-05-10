@@ -1,4 +1,55 @@
-.DS_Store
-*.keystore
-my-release-key.jks
+# Android/Gradle/Kotlin .gitignore
 
+# Built artifacts
+build/
+bin/
+out/
+gen/
+*.apk
+*.aar
+*.ap_
+*.dex
+
+# Gradle files
+.gradle/
+local.properties
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+*.pyc
+
+# IntelliJ/Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/shelf
+.idea/caches
+
+# OS specific
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.stackdump
+
+# Keystores & Secrets
+*.keystore
+*.jks
+*.p12
+*.pem
+google-services.json
+
+# Makefile artifacts
+build.config.bak
+# Keep build.config as it's used by Makefile
+
+# Logs
+*.log
