@@ -109,8 +109,8 @@ class StatisticsActivity : AppCompatActivity() {
 
     private fun setupCharts() {
         // Setup Pie Chart
-        chartPie.description = Description().apply { text = "" }
-        chartPie.setUsePercentages(true)
+        // chartPie.description.isEnabled = false
+        chartPie.setUsePercentValues(true)
         chartPie.isDrawHoleEnabled = true
         chartPie.setHoleColor(Color.WHITE)
         chartPie.setTransparentCircleRadius(58f)
@@ -187,8 +187,8 @@ class StatisticsActivity : AppCompatActivity() {
     }
 
     private fun updateBarChart(data: Map<String, Double>) {
-        val entries = data.mapIndexed { index, (month, amount) ->
-            BarEntry(index.toFloat(), amount.toFloat())
+        val entries = data.entries.mapIndexed { index, entry ->
+            BarEntry(index.toFloat(), entry.value.toFloat())
         }
 
         val dataSet = BarDataSet(entries, "Monthly Expense").apply {

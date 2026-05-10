@@ -10,6 +10,8 @@ import android.os.Environment
 import android.provider.Settings
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
+import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -306,14 +308,14 @@ class BackupAdapter(
 ) : RecyclerView.Adapter<BackupAdapter.BackupViewHolder>() {
 
     class BackupViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val textName: TextView = itemView.findViewById(android.R.id.text1)
-        val textDate: TextView = itemView.findViewById(android.R.id.text2)
+        val textName: TextView = itemView.findViewById(R.id.text_backup_name)
+        val textDate: TextView = itemView.findViewById(R.id.text_backup_date)
         val buttonDelete: View = itemView.findViewById(R.id.button_backup_delete)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BackupViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(android.R.layout.simple_list_item_2, parent, false)
+            .inflate(R.layout.item_backup, parent, false)
         return BackupViewHolder(view)
     }
 

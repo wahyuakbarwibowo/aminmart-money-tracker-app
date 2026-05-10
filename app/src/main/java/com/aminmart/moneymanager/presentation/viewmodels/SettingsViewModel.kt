@@ -1,14 +1,19 @@
 package com.aminmart.moneymanager.presentation.viewmodels
 
 import com.aminmart.moneymanager.domain.model.Transaction
+import com.aminmart.moneymanager.domain.repository.BackupRepository
 import com.aminmart.moneymanager.domain.usecase.AutoBackupUseCase
 import com.aminmart.moneymanager.domain.usecase.CreateBackupUseCase
 import com.aminmart.moneymanager.domain.usecase.DeleteBackupUseCase
 import com.aminmart.moneymanager.domain.usecase.GetAvailableBackupsUseCase
 import com.aminmart.moneymanager.domain.usecase.RestoreBackupUseCase
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for Settings screen
@@ -19,7 +24,7 @@ class SettingsViewModel(
     private val getAvailableBackupsUseCase: GetAvailableBackupsUseCase,
     private val autoBackupUseCase: AutoBackupUseCase,
     private val deleteBackupUseCase: DeleteBackupUseCase
-) {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -36,12 +41,17 @@ class SettingsViewModel(
     fun loadBackups() {
         _uiState.value = _uiState.value.copy(isLoading = true)
 
-        getAvailableBackupsUseCase().collectInScope { list ->
-            _backups.value = list
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                error = null
-            )
+        viewModelScope.launch {
+            try {
+                val backupsList = getAvailableBackupsUseCase()
+                _backups.value = backupsList
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = null
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+            }
         }
     }
 
@@ -73,12 +83,6 @@ class SettingsViewModel(
         return android.os.Environment.getExternalStoragePublicDirectory(
             android.os.Environment.DIRECTORY_DOCUMENTS
         ).absolutePath + "/MoneyManagerBackup"
-    }
-
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
-        }
     }
 }
 

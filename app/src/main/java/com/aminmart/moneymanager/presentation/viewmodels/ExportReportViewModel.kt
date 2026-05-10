@@ -2,6 +2,8 @@ package com.aminmart.moneymanager.presentation.viewmodels
 
 import com.aminmart.moneymanager.domain.usecase.ExportToCsvUseCase
 import com.aminmart.moneymanager.domain.usecase.ExportToExcelUseCase
+import com.aminmart.moneymanager.domain.usecase.ExportReportUseCase
+import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +15,7 @@ class ExportReportViewModel(
     private val exportToCsvUseCase: ExportToCsvUseCase,
     private val exportToExcelUseCase: ExportToExcelUseCase,
     private val exportReportUseCase: ExportReportUseCase
-) {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExportReportUiState())
     val uiState: StateFlow<ExportReportUiState> = _uiState.asStateFlow()

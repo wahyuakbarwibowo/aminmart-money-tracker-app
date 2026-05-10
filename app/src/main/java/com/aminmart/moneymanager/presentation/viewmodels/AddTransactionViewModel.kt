@@ -5,9 +5,13 @@ import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.domain.usecase.AddTransactionUseCase
 import com.aminmart.moneymanager.domain.usecase.GetTransactionByIdUseCase
 import com.aminmart.moneymanager.domain.usecase.UpdateTransactionUseCase
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for Add/Edit Transaction screen
@@ -16,7 +20,7 @@ class AddTransactionViewModel(
     private val getTransactionByIdUseCase: GetTransactionByIdUseCase,
     private val addTransactionUseCase: AddTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase
-) {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddTransactionUiState())
     val uiState: StateFlow<AddTransactionUiState> = _uiState.asStateFlow()
@@ -75,11 +79,16 @@ class AddTransactionViewModel(
     fun editTransaction(transactionId: Long) {
         _uiState.value = _uiState.value.copy(isLoading = true)
 
-        getTransactionByIdUseCase(transactionId).collectInScope { transaction ->
-            transaction?.let {
-                _transactionState.value = it
+        viewModelScope.launch {
+            try {
+                val transaction = getTransactionByIdUseCase(transactionId)
+                transaction?.let {
+                    _transactionState.value = it
+                }
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
             }
-            _uiState.value = _uiState.value.copy(isLoading = false)
         }
     }
 
@@ -106,12 +115,6 @@ class AddTransactionViewModel(
             _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
         }
     }
-
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T?>.collectInScope(crossinline action: suspend (T?) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
-        }
-    }
 }
 
 /**
@@ -122,4 +125,3 @@ data class AddTransactionUiState(
     val error: String? = null,
     val successMessage: String? = null
 )
-

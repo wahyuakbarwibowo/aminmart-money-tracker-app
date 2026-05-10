@@ -104,7 +104,7 @@ class DebtActivity : AppCompatActivity() {
             .setMessage("Are you sure you want to delete this record?")
             .setPositiveButton("Delete") { _, _ ->
                 runBlocking {
-                    viewModel.deleteDebt(debt.id)
+                    viewModel.deleteDebt(debt)
                     viewModel.loadDebts()
                 }
             }

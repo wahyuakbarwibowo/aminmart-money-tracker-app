@@ -3,8 +3,11 @@ package com.aminmart.moneymanager.presentation.activities
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
+import android.view.LayoutInflater
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.AutoCompleteTextView
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -20,6 +23,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import java.text.NumberFormat
 import java.util.Locale
+import java.util.Calendar
 
 /**
  * Budget Activity - Manage monthly budgets

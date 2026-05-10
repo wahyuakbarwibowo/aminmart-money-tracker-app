@@ -66,7 +66,7 @@ class StatisticsViewModel(
 
     fun getCategoryPercentage(category: String): Float {
         val total = getTotalExpense()
-        return if (total > 0) (_categoryData.value[category] ?: 0.0) / total.toFloat() else 0f
+        return if (total > 0) ((_categoryData.value[category] ?: 0.0) / total).toFloat() else 0f
     }
 
     private fun getPeriodDates(period: StatisticsPeriod): Pair<Long, Long> {

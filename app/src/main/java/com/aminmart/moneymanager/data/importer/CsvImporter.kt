@@ -3,6 +3,7 @@ package com.aminmart.moneymanager.data.importer
 import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.domain.repository.CsvImportRepository
 import com.aminmart.moneymanager.domain.repository.CsvImportResult
+import com.aminmart.moneymanager.domain.repository.TransactionRepository
 import java.io.File
 import java.io.BufferedReader
 import java.io.FileReader
@@ -11,11 +12,11 @@ import java.io.FileReader
  * CSV Importer for bank transaction statements
  */
 class CsvImporter(
-    private val transactionRepository: CsvImportRepository
+    private val transactionRepository: TransactionRepository
 ) : CsvImportRepository {
 
     companion object {
-        private const val DATE_FORMATS = listOf(
+        private val DATE_FORMATS = listOf(
             "yyyy-MM-dd",
             "dd-MM-yyyy",
             "MM/dd/yyyy",
@@ -49,7 +50,7 @@ class CsvImporter(
                         continue
                     }
 
-                    val transaction = parseLine(line!!, headerMap)
+                    val transaction = parseLine(line!!, headerMap ?: emptyMap())
                     if (transaction != null) {
                         transactions.add(transaction)
                     }
@@ -270,13 +271,13 @@ class CsvImporter(
 
         if (type == Transaction.TransactionType.EXPENSE) {
             for ((keywords, category) in expenseCategories) {
-                if (keywords.any { lowerDesc.contains(it) })) {
+                if (keywords.any { lowerDesc.contains(it) }) {
                     return category
                 }
             }
         } else {
             for ((keywords, category) in incomeCategories) {
-                if (keywords.any { lowerDesc.contains(it) })) {
+                if (keywords.any { lowerDesc.contains(it) }) {
                     return category
                 }
             }

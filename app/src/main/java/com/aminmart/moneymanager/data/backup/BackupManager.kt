@@ -71,8 +71,8 @@ class BackupManager(
         return try {
             backupDirectory.listFiles()
                 ?.filter { it.isFile && (it.name.endsWith(".json") || it.name.endsWith(".csv")) }
-                ?.map { it.absolutePath }
                 ?.sortedByDescending { it.lastModified() }
+                ?.map { it.absolutePath }
                 ?: emptyList()
         } catch (e: Exception) {
             emptyList()

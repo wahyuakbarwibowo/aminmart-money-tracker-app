@@ -632,7 +632,7 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
             type = Transaction.TransactionType.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(COL_TYPE))),
             amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COL_AMOUNT)),
             category = cursor.getString(cursor.getColumnIndexOrThrow(COL_CATEGORY)),
-            description = cursor.getString(cursor.getColumnIndexOrThrow(COL_DESCRIPTION) ?: ""),
+            description = cursor.getString(cursor.getColumnIndexOrThrow(COL_DESCRIPTION)),
             date = cursor.getLong(cursor.getColumnIndexOrThrow(COL_DATE)),
             createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COL_CREATED_AT)),
             isRiba = cursor.getInt(cursor.getColumnIndexOrThrow(COL_IS_RIBA)) == 1
@@ -676,7 +676,7 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
             fileName = cursor.getString(cursor.getColumnIndexOrThrow(COL_FILE_NAME)),
             importDate = cursor.getLong(cursor.getColumnIndexOrThrow(COL_IMPORT_DATE)),
             transactionCount = cursor.getInt(cursor.getColumnIndexOrThrow(COL_TRANSACTION_COUNT)),
-            status = ImportHistory.ImportStatus.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(COL_STATUS) ?: "SUCCESS"))
+            status = ImportHistory.ImportStatus.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(COL_STATUS)))
         )
     }
 
