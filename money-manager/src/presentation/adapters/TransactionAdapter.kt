@@ -32,6 +32,7 @@ class TransactionAdapter(
         val textDescription: TextView = itemView.findViewById(R.id.text_transaction_description)
         val textAmount: TextView = itemView.findViewById(R.id.text_transaction_amount)
         val indicatorType: View = itemView.findViewById(R.id.indicator_transaction_type)
+        val ribaIndicator: TextView = itemView.findViewById(R.id.text_riba_indicator)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TransactionViewHolder {
@@ -63,6 +64,9 @@ class TransactionAdapter(
         }
         holder.textAmount.setTextColor(color)
         holder.indicatorType.setBackgroundColor(color)
+
+        // Show/hide Riba indicator
+        holder.ribaIndicator.visibility = if (transaction.isRiba) View.VISIBLE else View.GONE
 
         // Click listeners
         holder.itemView.setOnClickListener {

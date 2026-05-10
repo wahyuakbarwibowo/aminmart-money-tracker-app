@@ -65,6 +65,18 @@
                 android:maxLines="1"
                 android:ellipsize="end" />
 
+            <TextView
+                android:id="@+id/text_riba_indicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Riba"
+                android:textColor="@color/expense_red"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp"
+                android:visibility="gone"
+                tools:visibility="visible"/>
+
         </LinearLayout>
 
         <!-- Amount -->

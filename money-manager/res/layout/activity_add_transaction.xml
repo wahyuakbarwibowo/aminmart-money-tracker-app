@@ -144,6 +144,13 @@
                 android:textSize="14sp"
                 android:layout_marginTop="4dp" />
 
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_transaction_riba"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Tandai sebagai Riba" />
+
             <!-- Save Button -->
             <Button
                 android:id="@+id/button_transaction_save"

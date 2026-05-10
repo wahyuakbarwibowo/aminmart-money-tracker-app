@@ -5,9 +5,10 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.domain.model.Budget
+import com.aminmart.moneymanager.domain.model.Debt
 import com.aminmart.moneymanager.domain.model.ImportHistory
+import com.aminmart.moneymanager.domain.model.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -18,17 +19,20 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
 
     companion object {
         private const val DATABASE_NAME = "moneymanager.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 3
 
-        // Transaction table
-        private const val TABLE_TRANSACTIONS = "transactions"
+        // Common columns
         private const val COL_ID = "id"
         private const val COL_TYPE = "type"
         private const val COL_AMOUNT = "amount"
-        private const val COL_CATEGORY = "category"
         private const val COL_DESCRIPTION = "description"
-        private const val COL_DATE = "date"
         private const val COL_CREATED_AT = "created_at"
+
+        // Transaction table
+        private const val TABLE_TRANSACTIONS = "transactions"
+        private const val COL_CATEGORY = "category"
+        private const val COL_DATE = "date"
+        private const val COL_IS_RIBA = "is_riba"
 
         // Budget table
         private const val TABLE_BUDGETS = "budgets"
@@ -42,9 +46,31 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
         private const val COL_IMPORT_DATE = "import_date"
         private const val COL_TRANSACTION_COUNT = "transaction_count"
         private const val COL_STATUS = "status"
+
+        // Debt table
+        private const val TABLE_DEBTS = "debts"
+        private const val COL_PERSON_NAME = "person_name"
+        private const val COL_DUE_DATE = "due_date"
+        private const val COL_IS_PAID = "is_paid"
+        private const val COL_UPDATED_AT = "updated_at"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
+        createTables(db)
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) {
+            db.execSQL(CREATE_DEBTS_TABLE_SQL)
+            db.execSQL("CREATE INDEX idx_debts_type ON $TABLE_DEBTS($COL_TYPE)")
+            db.execSQL("CREATE INDEX idx_debts_is_paid ON $TABLE_DEBTS($COL_IS_PAID)")
+        }
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE $TABLE_TRANSACTIONS ADD COLUMN $COL_IS_RIBA INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
+    private fun createTables(db: SQLiteDatabase) {
         // Create transactions table
         db.execSQL("""
             CREATE TABLE $TABLE_TRANSACTIONS (
@@ -54,7 +80,8 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
                 $COL_CATEGORY TEXT NOT NULL,
                 $COL_DESCRIPTION TEXT,
                 $COL_DATE INTEGER NOT NULL,
-                $COL_CREATED_AT INTEGER NOT NULL
+                $COL_CREATED_AT INTEGER NOT NULL,
+                $COL_IS_RIBA INTEGER NOT NULL DEFAULT 0
             )
         """)
 
@@ -82,23 +109,31 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
             )
         """)
 
+        // Create debts table
+        db.execSQL(CREATE_DEBTS_TABLE_SQL)
+
         // Create indexes for better performance
         db.execSQL("CREATE INDEX idx_transactions_type ON $TABLE_TRANSACTIONS($COL_TYPE)")
         db.execSQL("CREATE INDEX idx_transactions_date ON $TABLE_TRANSACTIONS($COL_DATE)")
         db.execSQL("CREATE INDEX idx_transactions_category ON $TABLE_TRANSACTIONS($COL_CATEGORY)")
         db.execSQL("CREATE INDEX idx_budgets_month ON $TABLE_BUDGETS($COL_MONTH)")
+        db.execSQL("CREATE INDEX idx_debts_type ON $TABLE_DEBTS($COL_TYPE)")
+        db.execSQL("CREATE INDEX idx_debts_is_paid ON $TABLE_DEBTS($COL_IS_PAID)")
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Handle database upgrades
-        if (oldVersion < newVersion) {
-            // For now, just recreate tables
-            db.execSQL("DROP TABLE IF EXISTS $TABLE_TRANSACTIONS")
-            db.execSQL("DROP TABLE IF EXISTS $TABLE_BUDGETS")
-            db.execSQL("DROP TABLE IF EXISTS $TABLE_IMPORT_HISTORY")
-            onCreate(db)
-        }
-    }
+    private val CREATE_DEBTS_TABLE_SQL = """
+        CREATE TABLE $TABLE_DEBTS (
+            $COL_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            $COL_PERSON_NAME TEXT NOT NULL,
+            $COL_AMOUNT REAL NOT NULL,
+            $COL_TYPE TEXT NOT NULL,
+            $COL_DUE_DATE INTEGER NOT NULL,
+            $COL_DESCRIPTION TEXT,
+            $COL_IS_PAID INTEGER NOT NULL DEFAULT 0,
+            $COL_CREATED_AT INTEGER NOT NULL,
+            $COL_UPDATED_AT INTEGER NOT NULL
+        )
+    """
 
     // ==================== Transaction Operations ====================
 
@@ -200,7 +235,7 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
             WHERE $COL_TYPE = ? AND $COL_DATE BETWEEN ? AND ?
             GROUP BY $COL_CATEGORY
         """, arrayOf(Transaction.TransactionType.EXPENSE.name, startDate.toString(), endDate.toString()))
-        
+
         val result = mutableMapOf<String, Double>()
         cursor.use {
             while (it.moveToNext()) {
@@ -215,7 +250,7 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
         val calendar = java.util.Calendar.getInstance()
         calendar.add(java.util.Calendar.MONTH, -months + 1)
         val startDate = calendar.timeInMillis
-        
+
         val cursor = db.rawQuery("""
             SELECT strftime('%Y-%m', $COL_DATE / 1000, 'unixepoch') as month, SUM($COL_AMOUNT)
             FROM $TABLE_TRANSACTIONS
@@ -223,7 +258,7 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
             GROUP BY month
             ORDER BY month
         """, arrayOf(Transaction.TransactionType.EXPENSE.name, startDate.toString()))
-        
+
         val result = mutableMapOf<String, Double>()
         cursor.use {
             while (it.moveToNext()) {
@@ -409,6 +444,53 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
         db.delete(TABLE_IMPORT_HISTORY, "$COL_ID = ?", arrayOf(id.toString()))
     }
 
+    // ==================== Debt Operations ====================
+
+    fun getAllDebts(): Flow<List<Debt>> = flow {
+        emit(queryAllDebts())
+    }
+
+    suspend fun getDebtById(id: Long): Debt? {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_DEBTS,
+            null,
+            "$COL_ID = ?",
+            arrayOf(id.toString()),
+            null, null, null
+        )
+        return cursor.use {
+            if (it.moveToFirst()) {
+                cursorToDebt(it)
+            } else {
+                null
+            }
+        }
+    }
+
+    suspend fun insertDebt(debt: Debt): Long {
+        val db = writableDatabase
+        val values = debtToContentValues(debt)
+        return db.insert(TABLE_DEBTS, null, values)
+    }
+
+    suspend fun updateDebt(debt: Debt) {
+        val db = writableDatabase
+        val values = debtToContentValues(debt)
+        db.update(
+            TABLE_DEBTS,
+            values,
+            "$COL_ID = ?",
+            arrayOf(debt.id.toString())
+        )
+    }
+
+    suspend fun deleteDebt(id: Long) {
+        val db = writableDatabase
+        db.delete(TABLE_DEBTS, "$COL_ID = ?", arrayOf(id.toString()))
+    }
+
+
     // ==================== Helper Methods ====================
 
     private fun queryAllTransactions(): List<Transaction> {
@@ -523,6 +605,17 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
         return cursorToImportHistoryList(cursor)
     }
 
+    private fun queryAllDebts(): List<Debt> {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_DEBTS,
+            null,
+            null, null, null, null,
+            "$COL_DUE_DATE DESC"
+        )
+        return cursorToDebtList(cursor)
+    }
+
     private fun cursorToTransactionList(cursor: Cursor): List<Transaction> {
         val transactions = mutableListOf<Transaction>()
         cursor.use {
@@ -541,7 +634,8 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
             category = cursor.getString(cursor.getColumnIndexOrThrow(COL_CATEGORY)),
             description = cursor.getString(cursor.getColumnIndexOrThrow(COL_DESCRIPTION) ?: ""),
             date = cursor.getLong(cursor.getColumnIndexOrThrow(COL_DATE)),
-            createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COL_CREATED_AT))
+            createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COL_CREATED_AT)),
+            isRiba = cursor.getInt(cursor.getColumnIndexOrThrow(COL_IS_RIBA)) == 1
         )
     }
 
@@ -586,6 +680,30 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
         )
     }
 
+    private fun cursorToDebtList(cursor: Cursor): List<Debt> {
+        val debts = mutableListOf<Debt>()
+        cursor.use {
+            while (it.moveToNext()) {
+                debts.add(cursorToDebt(it))
+            }
+        }
+        return debts
+    }
+
+    private fun cursorToDebt(cursor: Cursor): Debt {
+        return Debt(
+            id = cursor.getLong(cursor.getColumnIndexOrThrow(COL_ID)),
+            personName = cursor.getString(cursor.getColumnIndexOrThrow(COL_PERSON_NAME)),
+            amount = cursor.getDouble(cursor.getColumnIndexOrThrow(COL_AMOUNT)),
+            type = Debt.DebtType.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(COL_TYPE))),
+            dueDate = cursor.getLong(cursor.getColumnIndexOrThrow(COL_DUE_DATE)),
+            description = cursor.getString(cursor.getColumnIndexOrThrow(COL_DESCRIPTION)),
+            isPaid = cursor.getInt(cursor.getColumnIndexOrThrow(COL_IS_PAID)) == 1,
+            createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COL_CREATED_AT)),
+            updatedAt = cursor.getLong(cursor.getColumnIndexOrThrow(COL_UPDATED_AT))
+        )
+    }
+
     private fun transactionToContentValues(transaction: Transaction): ContentValues {
         return ContentValues().apply {
             put(COL_TYPE, transaction.type.name)
@@ -594,6 +712,7 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
             put(COL_DESCRIPTION, transaction.description)
             put(COL_DATE, transaction.date)
             put(COL_CREATED_AT, transaction.createdAt)
+            put(COL_IS_RIBA, if (transaction.isRiba) 1 else 0)
         }
     }
 
@@ -613,6 +732,19 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
             put(COL_IMPORT_DATE, history.importDate)
             put(COL_TRANSACTION_COUNT, history.transactionCount)
             put(COL_STATUS, history.status.name)
+        }
+    }
+
+    private fun debtToContentValues(debt: Debt): ContentValues {
+        return ContentValues().apply {
+            put(COL_PERSON_NAME, debt.personName)
+            put(COL_AMOUNT, debt.amount)
+            put(COL_TYPE, debt.type.name)
+            put(COL_DUE_DATE, debt.dueDate)
+            put(COL_DESCRIPTION, debt.description)
+            put(COL_IS_PAID, if (debt.isPaid) 1 else 0)
+            put(COL_CREATED_AT, debt.createdAt)
+            put(COL_UPDATED_AT, debt.updatedAt)
         }
     }
 

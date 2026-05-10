@@ -7,11 +7,13 @@ import com.aminmart.moneymanager.data.database.MoneyDatabase
 import com.aminmart.moneymanager.data.datasource.ExportManager
 import com.aminmart.moneymanager.data.importer.CsvImporter
 import com.aminmart.moneymanager.data.repository.BudgetRepositoryImpl
+import com.aminmart.moneymanager.data.repository.DebtRepositoryImpl
 import com.aminmart.moneymanager.data.repository.ImportHistoryRepositoryImpl
 import com.aminmart.moneymanager.data.repository.TransactionRepositoryImpl
 import com.aminmart.moneymanager.domain.repository.BackupRepository
 import com.aminmart.moneymanager.domain.repository.BudgetRepository
 import com.aminmart.moneymanager.domain.repository.CsvImportRepository
+import com.aminmart.moneymanager.domain.repository.DebtRepository
 import com.aminmart.moneymanager.domain.repository.ExportRepository
 import com.aminmart.moneymanager.domain.repository.ImportHistoryRepository
 import com.aminmart.moneymanager.domain.repository.TransactionRepository
@@ -39,6 +41,8 @@ class MoneyManagerApplication : Application() {
     lateinit var backupRepository: BackupRepository
         private set
     lateinit var exportRepository: ExportRepository
+        private set
+    lateinit var debtRepository: DebtRepository
         private set
 
     // Use Cases - Transactions
@@ -105,6 +109,10 @@ class MoneyManagerApplication : Application() {
     lateinit var deleteBackupUseCase: DeleteBackupUseCase
         private set
 
+    // Use Cases - Debt
+    lateinit var debtUseCases: DebtUseCases
+        private set
+
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -122,6 +130,7 @@ class MoneyManagerApplication : Application() {
         csvImportRepository = CsvImporter(transactionRepository)
         backupRepository = BackupManager(this, transactionRepository, budgetRepository)
         exportRepository = ExportManager(this, transactionRepository)
+        debtRepository = DebtRepositoryImpl(database)
 
         // Initialize Use Cases - Transactions
         getAllTransactionsUseCase = GetAllTransactionsUseCase(transactionRepository)
@@ -159,6 +168,15 @@ class MoneyManagerApplication : Application() {
         getAvailableBackupsUseCase = GetAvailableBackupsUseCase(backupRepository)
         autoBackupUseCase = AutoBackupUseCase(backupRepository)
         deleteBackupUseCase = DeleteBackupUseCase(backupRepository)
+
+        // Initialize Use Cases - Debt
+        debtUseCases = DebtUseCases(
+            getAllDebts = GetAllDebts(debtRepository),
+            getDebtById = GetDebtById(debtRepository),
+            addDebt = AddDebt(debtRepository),
+            updateDebt = UpdateDebt(debtRepository),
+            deleteDebt = DeleteDebt(debtRepository)
+        )
     }
 
     companion object {

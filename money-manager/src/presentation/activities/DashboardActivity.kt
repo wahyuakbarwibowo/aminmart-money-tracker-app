@@ -15,6 +15,8 @@ import com.aminmart.moneymanager.domain.model.DashboardStats
 import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.presentation.adapters.TransactionAdapter
 import com.aminmart.moneymanager.presentation.viewmodels.DashboardViewModel
+import com.aminmart.moneymanager.presentation.viewmodels.DebtSummary
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.text.NumberFormat
 import java.util.Locale
@@ -32,9 +34,12 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var textTotalExpense: TextView
     private lateinit var textMonthIncome: TextView
     private lateinit var textMonthExpense: TextView
+    private lateinit var textTotalDebt: TextView
+    private lateinit var textTotalCredit: TextView
     private lateinit var recyclerRecent: RecyclerView
     private lateinit var fabAdd: FloatingActionButton
     private lateinit var viewEmpty: View
+    private lateinit var cardDebt: MaterialCardView
 
     private lateinit var adapter: TransactionAdapter
 
@@ -49,7 +54,8 @@ class DashboardActivity : AppCompatActivity() {
         app = application as MoneyManagerApplication
         viewModel = DashboardViewModel(
             app.getDashboardStatsUseCase,
-            app.getRecentTransactionsUseCase
+            app.getRecentTransactionsUseCase,
+            app.debtUseCases
         )
 
         initViews()
@@ -67,9 +73,16 @@ class DashboardActivity : AppCompatActivity() {
         textTotalExpense = findViewById(R.id.text_dashboard_total_expense)
         textMonthIncome = findViewById(R.id.text_dashboard_month_income)
         textMonthExpense = findViewById(R.id.text_dashboard_month_expense)
+        textTotalDebt = findViewById(R.id.text_dashboard_total_debt)
+        textTotalCredit = findViewById(R.id.text_dashboard_total_credit)
         recyclerRecent = findViewById(R.id.recycler_dashboard_recent)
         fabAdd = findViewById(R.id.fab_dashboard_add)
         viewEmpty = findViewById(R.id.view_dashboard_empty)
+        cardDebt = findViewById(R.id.card_dashboard_debt)
+
+        cardDebt.setOnClickListener {
+            startActivity(Intent(this, DebtActivity::class.java))
+        }
     }
 
     private fun setupRecyclerView() {
@@ -94,6 +107,10 @@ class DashboardActivity : AppCompatActivity() {
             adapter.submitList(transactions)
             viewEmpty.visibility = if (transactions.isEmpty()) View.VISIBLE else View.GONE
         }
+
+        viewModel.debtSummary.collectInScope { summary ->
+            updateDebtSummary(summary)
+        }
     }
 
     private fun updateStats(stats: DashboardStats) {
@@ -107,6 +124,11 @@ class DashboardActivity : AppCompatActivity() {
         textTotalBalance.setTextColor(
             getColor(if (stats.totalBalance >= 0) R.color.income_green else R.color.expense_red)
         )
+    }
+
+    private fun updateDebtSummary(summary: DebtSummary) {
+        textTotalDebt.text = "-${currencyFormat.format(summary.totalDebt)}"
+        textTotalCredit.text = "+${currencyFormat.format(summary.totalCredit)}"
     }
 
     private fun showTransactionDetail(transaction: Transaction) {

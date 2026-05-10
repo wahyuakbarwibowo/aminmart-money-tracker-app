@@ -10,7 +10,8 @@ data class Transaction(
     val category: String,
     val description: String,
     val date: Long, // Timestamp in milliseconds
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isRiba: Boolean = false
 ) {
     enum class TransactionType {
         INCOME,

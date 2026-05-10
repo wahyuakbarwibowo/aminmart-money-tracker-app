@@ -68,6 +68,17 @@
             android:name=".presentation.activities.ExportReportActivity"
             android:exported="false" />
 
+        <!-- Debt Activity -->
+        <activity
+            android:name=".presentation.activities.DebtActivity"
+            android:exported="false" />
+
+        <!-- Add Debt Activity -->
+        <activity
+            android:name=".presentation.activities.AddDebtActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- File Provider for sharing files -->
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,7 +1,9 @@
 package com.aminmart.moneymanager.presentation.viewmodels
 
 import com.aminmart.moneymanager.domain.model.DashboardStats
+import com.aminmart.moneymanager.domain.model.Debt
 import com.aminmart.moneymanager.domain.model.Transaction
+import com.aminmart.moneymanager.domain.usecase.DebtUseCases
 import com.aminmart.moneymanager.domain.usecase.GetDashboardStatsUseCase
 import com.aminmart.moneymanager.domain.usecase.GetRecentTransactionsUseCase
 import kotlinx.coroutines.flow.Flow
@@ -15,7 +17,8 @@ import kotlinx.coroutines.flow.combine
  */
 class DashboardViewModel(
     private val getDashboardStatsUseCase: GetDashboardStatsUseCase,
-    private val getRecentTransactionsUseCase: GetRecentTransactionsUseCase
+    private val getRecentTransactionsUseCase: GetRecentTransactionsUseCase,
+    private val debtUseCases: DebtUseCases
 ) {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -27,6 +30,9 @@ class DashboardViewModel(
     private val _recentTransactions = MutableStateFlow<List<Transaction>>(emptyList())
     val recentTransactions: StateFlow<List<Transaction>> = _recentTransactions.asStateFlow()
 
+    private val _debtSummary = MutableStateFlow(DebtSummary())
+    val debtSummary: StateFlow<DebtSummary> = _debtSummary.asStateFlow()
+
     init {
         loadDashboardData()
     }
@@ -34,11 +40,11 @@ class DashboardViewModel(
     fun loadDashboardData() {
         _uiState.value = _uiState.value.copy(isLoading = true)
 
-        // Combine stats and recent transactions
-        combineStatsAndTransactions()
+        // Combine stats, recent transactions and debt summary
+        combineAllData()
     }
 
-    private fun combineStatsAndTransactions() {
+    private fun combineAllData() {
         // Observe dashboard stats
         getDashboardStatsUseCase().collectInScope { stats ->
             _stats.value = stats
@@ -51,6 +57,13 @@ class DashboardViewModel(
         // Observe recent transactions
         getRecentTransactionsUseCase(10).collectInScope { transactions ->
             _recentTransactions.value = transactions
+        }
+
+        // Observe debts
+        debtUseCases.getAllDebts().collectInScope { debts ->
+            val totalDebt = debts.filter { it.type == Debt.DebtType.DEBT && !it.isPaid }.sumOf { it.amount }
+            val totalCredit = debts.filter { it.type == Debt.DebtType.CREDIT && !it.isPaid }.sumOf { it.amount }
+            _debtSummary.value = DebtSummary(totalDebt, totalCredit)
         }
     }
 
@@ -72,4 +85,12 @@ class DashboardViewModel(
 data class DashboardUiState(
     val isLoading: Boolean = false,
     val error: String? = null
+)
+
+/**
+ * Data class for Debt Summary
+ */
+data class DebtSummary(
+    val totalDebt: Double = 0.0,
+    val totalCredit: Double = 0.0
 )

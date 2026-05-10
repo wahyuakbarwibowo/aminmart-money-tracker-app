@@ -3,22 +3,22 @@ package com.aminmart.moneymanager.presentation.activities
 import android.app.DatePickerDialog
 import android.os.Bundle
 import android.view.MenuItem
-import android.view.View
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
-import android.widget.EditText
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.widget.doOnTextChanged
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
 import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.presentation.viewmodels.AddTransactionViewModel
-import java.text.NumberFormat
+import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.textfield.TextInputEditText
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -35,30 +35,31 @@ class AddTransactionActivity : AppCompatActivity() {
     private lateinit var radioType: RadioGroup
     private lateinit var radioIncome: RadioButton
     private lateinit var radioExpense: RadioButton
-    private lateinit var editAmount: EditText
+    private lateinit var editAmount: TextInputEditText
     private lateinit var categoryDropdown: AutoCompleteTextView
-    private lateinit var editDescription: EditText
+    private lateinit var editDescription: TextInputEditText
     private lateinit var buttonDate: Button
     private lateinit var textDate: TextView
+    private lateinit var ribaSwitch: SwitchMaterial
     private lateinit var buttonSave: Button
 
-    private var transactionId: Long? = null
-    private val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply {
-        maximumFractionDigits = 0
-    }
     private val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
+    private var transactionId: Long = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_transaction)
 
         app = application as MoneyManagerApplication
-        viewModel = AddTransactionViewModel(app.getTransactionByIdUseCase)
+        viewModel = AddTransactionViewModel(
+            app.getTransactionByIdUseCase,
+            app.addTransactionUseCase,
+            app.updateTransactionUseCase
+        )
 
-        // Check if editing existing transaction
-        transactionId = intent.getLongExtra("transaction_id", 0)
-        if (transactionId != null && transactionId!! > 0) {
-            viewModel.editTransaction(transactionId!!)
+        transactionId = intent.getLongExtra("transaction_id", 0L)
+        if (transactionId != 0L) {
+            viewModel.editTransaction(transactionId)
         }
 
         initViews()
@@ -76,26 +77,34 @@ class AddTransactionActivity : AppCompatActivity() {
         editDescription = findViewById(R.id.edit_transaction_description)
         buttonDate = findViewById(R.id.button_transaction_date)
         textDate = findViewById(R.id.text_transaction_date_display)
+        ribaSwitch = findViewById(R.id.switch_transaction_riba)
         buttonSave = findViewById(R.id.button_transaction_save)
 
         setSupportActionBar(toolbar)
-        supportActionBar?.title = if (transactionId == null || transactionId!! <= 0) {
-            "Add Transaction"
-        } else {
-            "Edit Transaction"
-        }
+        supportActionBar?.title = if (transactionId == 0L) "Add Transaction" else "Edit Transaction"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
     private fun setupListeners() {
-        radioType.setOnCheckedChangeListener { _, _ ->
-            val type = if (radioIncome.isChecked) {
+        radioType.setOnCheckedChangeListener { _, checkedId ->
+            val type = if (checkedId == R.id.radio_income) {
                 Transaction.TransactionType.INCOME
             } else {
                 Transaction.TransactionType.EXPENSE
             }
             viewModel.setTransactionType(type)
-            updateCategoryDropdown()
+        }
+
+        editAmount.doOnTextChanged { text, _, _, _ ->
+            viewModel.setAmount(text.toString().toDoubleOrNull() ?: 0.0)
+        }
+
+        editDescription.doOnTextChanged { text, _, _, _ ->
+            viewModel.setDescription(text.toString())
+        }
+
+        ribaSwitch.setOnCheckedChangeListener { _, isChecked ->
+            viewModel.setRiba(isChecked)
         }
 
         buttonDate.setOnClickListener {
@@ -108,37 +117,46 @@ class AddTransactionActivity : AppCompatActivity() {
     }
 
     private fun observeData() {
-        viewModel.transactionType.collectInScope { type ->
-            when (type) {
-                Transaction.TransactionType.INCOME -> radioIncome.isChecked = true
-                Transaction.TransactionType.EXPENSE -> radioExpense.isChecked = true
+        viewModel.transactionState.collectInScope { transaction ->
+            // Update UI based on the central transaction state
+            if (editAmount.text.toString() != transaction.amount.toString() && transaction.amount > 0) {
+                editAmount.setText(transaction.amount.toString())
             }
-        }
-
-        viewModel.category.collectInScope { category ->
-            updateCategoryDropdown()
-        }
-
-        viewModel.date.collectInScope { date ->
-            textDate.text = dateFormat.format(java.util.Date(date))
+            if (editDescription.text.toString() != transaction.description) {
+                editDescription.setText(transaction.description)
+            }
+            if (ribaSwitch.isChecked != transaction.isRiba) {
+                ribaSwitch.isChecked = transaction.isRiba
+            }
+            if (transaction.type == Transaction.TransactionType.INCOME) {
+                if (!radioIncome.isChecked) radioIncome.isChecked = true
+            } else {
+                if (!radioExpense.isChecked) radioExpense.isChecked = true
+            }
+            textDate.text = dateFormat.format(Date(transaction.date))
+            updateCategoryDropdown(transaction.category)
         }
 
         viewModel.uiState.collectInScope { state ->
             buttonSave.isEnabled = !state.isLoading
             if (state.successMessage != null) {
-                showSuccess(state.successMessage)
+                showToast(state.successMessage)
+                setResult(RESULT_OK)
                 finish()
+            }
+            if (state.error != null) {
+                showToast(state.error, isError = true)
             }
         }
     }
 
-    private fun updateCategoryDropdown() {
+    private fun updateCategoryDropdown(selectedCategory: String) {
         val categories = viewModel.currentCategories
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, categories)
         categoryDropdown.setAdapter(adapter)
-        
-        viewModel.category.value?.let {
-            categoryDropdown.setText(it, false)
+
+        if (categoryDropdown.text.toString() != selectedCategory) {
+            categoryDropdown.setText(selectedCategory, false)
         }
 
         categoryDropdown.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
@@ -147,9 +165,9 @@ class AddTransactionActivity : AppCompatActivity() {
     }
 
     private fun showDatePicker() {
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = viewModel.date.value
-        
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = viewModel.transactionState.value.date
+        }
         DatePickerDialog(
             this,
             { _, year, month, dayOfMonth ->
@@ -163,51 +181,14 @@ class AddTransactionActivity : AppCompatActivity() {
     }
 
     private fun saveTransaction() {
-        val amountStr = editAmount.text.toString()
-        val description = editDescription.text.toString()
-        val category = categoryDropdown.text.toString()
-
-        if (amountStr.isEmpty()) {
-            editAmount.error = "Amount is required"
-            return
-        }
-
-        if (category.isEmpty()) {
-            categoryDropdown.error = "Category is required"
-            return
-        }
-
-        viewModel.setAmount(amountStr)
-        viewModel.setDescription(description)
-
-        val transaction = viewModel.buildTransaction()
-        if (transaction == null) {
-            showError("Invalid transaction data")
-            return
-        }
-
+        // ViewModel now handles all logic and validation
         kotlinx.coroutines.runBlocking {
-            try {
-                if (transactionId != null && transactionId!! > 0) {
-                    viewModel.updateTransaction(transaction)
-                } else {
-                    viewModel.addTransaction(transaction)
-                }
-                showSuccess("Transaction saved successfully")
-                setResult(RESULT_OK)
-                finish()
-            } catch (e: Exception) {
-                showError("Failed to save transaction: ${e.message}")
-            }
+            viewModel.saveTransaction()
         }
     }
 
-    private fun showSuccess(message: String) {
-        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
-    }
-
-    private fun showError(message: String) {
-        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_LONG).show()
+    private fun showToast(message: String, isError: Boolean = false) {
+        Toast.makeText(this, message, if (isError) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -226,3 +207,4 @@ class AddTransactionActivity : AppCompatActivity() {
         }
     }
 }
+
