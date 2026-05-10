@@ -43,7 +43,7 @@ install:
 .PHONY: run
 run: install
 	@echo "Starting application..."
-	@adb shell am start -n $(APP_ID)/$(APP_ID).presentation.activities.MainActivity
+	@adb shell am start -n $(APP_ID)/.presentation.activities.MainActivity
 	@echo "Application started"
 
 # View logs
