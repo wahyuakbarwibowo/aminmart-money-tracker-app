@@ -2,6 +2,39 @@
 
 A comprehensive personal finance management application built with Kotlin using Clean Architecture. This app can be built entirely from the command line without Android Studio or Gradle.
 
+## Quick Start
+
+```bash
+# 1) Build debug APK
+make debug
+
+# 2) Install to connected device/emulator
+make install
+
+# 3) Build + install + launch app
+make run
+```
+
+Debug APK output:
+`app/build/outputs/apk/debug/app-debug.apk`
+
+Signed release (manual keystore):
+```bash
+keytool -genkey -v \
+  -keystore build/release.keystore \
+  -alias release \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000 \
+  -storetype pkcs12
+
+export KEYSTORE_PATH=build/release.keystore
+export KEY_ALIAS=release
+export KEYSTORE_PASSWORD=your_keystore_password
+export KEY_PASSWORD=your_key_password
+make release-signed
+```
+
 ## Features
 
 ### Core Features
@@ -9,7 +42,8 @@ A comprehensive personal finance management application built with Kotlin using 
 - **Budget Planning**: Set monthly budgets per category with progress tracking
 - **Charts & Statistics**: Visualize spending with pie charts and monthly trends
 - **CSV Import**: Import bank statements from CSV files
-- **Auto Backup**: Automatic backup to JSON/CSV format
+- **JSON/CSV Import**: Import transactions from CSV and restore from JSON backup
+- **Auto Backup**: Automatic backup to JSON format
 - **Export Reports**: Export transaction reports to CSV/Excel
 
 ### Dashboard
@@ -113,15 +147,12 @@ This will download all required libraries to the `libs/` folder:
 ### Build APK
 
 ```bash
-# Build the APK
-make build
-
-# Or check dependencies first
-make check-deps
+# Build debug APK (both commands are equivalent)
+make debug
+# or
 make build
 ```
-
-The APK will be generated at `money-manager.apk`
+The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
 ### Install to Device
 
@@ -151,12 +182,6 @@ make log-filter
 ```bash
 # Clean build files
 make clean
-
-# Clean everything including downloaded libs
-make distclean
-
-# Verify APK signature
-make verify
 
 # List connected devices
 make devices
@@ -212,14 +237,17 @@ You will be prompted to:
 ### Build Signed Release APK
 
 ```bash
-# Set keystore passwords as environment variables
+# Set signing environment variables
+export KEYSTORE_PATH=build/release.keystore
+export KEY_ALIAS=release
 export KEYSTORE_PASSWORD=your_keystore_password
 export KEY_PASSWORD=your_key_password
 
-# Build signed release APK
-make build-release
+# Build signed release APK via Makefile target
+make release-signed
 
-# The signed APK will be at: money-manager-signed.apk
+# The signed APK will be at:
+# app/build/outputs/apk/release/app-release.apk
 ```
 
 ### Verify Release APK Signature
@@ -294,13 +322,14 @@ keytool -keypasswd -keystore build/release.keystore -alias release
 4. Enter monthly budget amount
 5. Tap Save
 
-### Importing CSV
+### Importing Data
 
 1. Go to Settings
-2. Tap "Import CSV (Bank Statement)"
-3. Select CSV file from your device
-4. Preview the transactions
-5. Tap "Import Transactions"
+2. Tap "Import Data (CSV/JSON)"
+3. Choose one:
+   - `Import CSV (Bank Statement)` for transaction import
+   - `Import JSON Backup` for full data restore
+4. Follow the on-screen flow
 
 **CSV Format:**
 ```csv
@@ -329,11 +358,11 @@ Date,Description,Amount
 - Creates backup when app closes
 - Toggle in Settings
 
-**Restore:**
+**Restore (JSON backup):**
 1. Go to Settings
 2. Tap "Restore"
 3. Select backup file
-4. Confirm restore
+4. Confirm restore (existing data will be replaced)
 
 ## Database Schema
 

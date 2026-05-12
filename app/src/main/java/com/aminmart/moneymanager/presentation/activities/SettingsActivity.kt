@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
+import com.aminmart.moneymanager.data.backup.BackupManager
 import com.aminmart.moneymanager.domain.repository.BackupRepository
 import com.aminmart.moneymanager.presentation.viewmodels.SettingsViewModel
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -105,7 +106,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         findViewById<View>(R.id.button_settings_import_csv).setOnClickListener {
-            startActivity(Intent(this, ImportCsvActivity::class.java))
+            showImportOptions()
         }
 
         findViewById<View>(R.id.button_settings_export_report).setOnClickListener {
@@ -206,6 +207,19 @@ class SettingsActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun showImportOptions() {
+        val options = arrayOf("Import CSV (Bank Statement)", "Import JSON Backup")
+        AlertDialog.Builder(this)
+            .setTitle("Import Data")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> startActivity(Intent(this, ImportCsvActivity::class.java))
+                    1 -> filePickerLauncher.launch("application/json")
+                }
+            }
+            .show()
+    }
+
     private fun showBackupsList() {
         val backups = viewModel.backups.value
         if (backups.isEmpty()) {
@@ -248,11 +262,15 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun restoreBackup(path: String) {
         kotlinx.coroutines.runBlocking {
-            val success = viewModel.restoreBackup(path)
-            if (success) {
-                Toast.makeText(this@SettingsActivity, "Restore successful", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this@SettingsActivity, "Restore failed", Toast.LENGTH_SHORT).show()
+            try {
+                val success = viewModel.restoreBackup(path)
+                if (success) {
+                    Toast.makeText(this@SettingsActivity, "Restore successful", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@SettingsActivity, "Restore failed", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: BackupManager.InvalidBackupException) {
+                Toast.makeText(this@SettingsActivity, e.message ?: "Invalid backup format", Toast.LENGTH_LONG).show()
             }
         }
     }

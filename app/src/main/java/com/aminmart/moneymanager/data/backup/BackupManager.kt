@@ -67,6 +67,8 @@ class BackupManager(
         }
     }
 
+    class InvalidBackupException(message: String) : IllegalArgumentException(message)
+
     override suspend fun getAvailableBackups(): List<String> {
         return try {
             backupDirectory.listFiles()
@@ -177,6 +179,8 @@ class BackupManager(
         try {
             val jsonString = reader.readText()
             val jsonObject = JSONObject(jsonString)
+
+            validateJsonBackup(jsonObject)
             
             // Restore transactions
             val transactionsArray = jsonObject.optJSONArray("transactions")
@@ -209,6 +213,31 @@ class BackupManager(
             return true
         } finally {
             reader.close()
+        }
+    }
+
+    private fun validateJsonBackup(jsonObject: JSONObject) {
+        if (!jsonObject.has("transactions")) {
+            throw InvalidBackupException("Invalid JSON backup: missing 'transactions' array")
+        }
+
+        val transactionsArray = jsonObject.optJSONArray("transactions")
+            ?: throw InvalidBackupException("Invalid JSON backup: 'transactions' must be an array")
+
+        for (i in 0 until transactionsArray.length()) {
+            val obj = transactionsArray.optJSONObject(i)
+                ?: throw InvalidBackupException("Invalid JSON backup: transaction at index $i is not an object")
+
+            val type = obj.optString("type", "")
+            if (type != "INCOME" && type != "EXPENSE") {
+                throw InvalidBackupException("Invalid JSON backup: transaction[$i].type must be INCOME or EXPENSE")
+            }
+
+            if (!obj.has("amount") || !obj.has("category") || !obj.has("description") || !obj.has("date")) {
+                throw InvalidBackupException(
+                    "Invalid JSON backup: transaction[$i] must contain amount, category, description, and date"
+                )
+            }
         }
     }
 

@@ -167,7 +167,7 @@
                         android:id="@+id/button_settings_import_csv"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Import CSV (Bank Statement)"
+                        android:text="Import Data (CSV/JSON)"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
                     <Button

@@ -12,8 +12,8 @@ GRADLE := $(shell if [ -f ./gradlew ]; then echo ./gradlew; else echo gradle; fi
 all: build
 
 # Main build target (debug)
-.PHONY: build
-build:
+.PHONY: build debug
+build debug:
 	$(GRADLE) assembleDebug
 	@echo ""
 	@echo "=========================================="
@@ -29,6 +29,25 @@ build-release:
 	@echo ""
 	@echo "=========================================="
 	@echo "RELEASE BUILD SUCCESSFUL"
+	@echo "=========================================="
+	@echo "APK: app/build/outputs/apk/release/app-release.apk"
+	@echo ""
+
+# Build signed release APK using keystore env vars
+.PHONY: release-signed
+release-signed:
+	@test -n "$(KEYSTORE_PATH)" || (echo "ERROR: KEYSTORE_PATH is required"; exit 1)
+	@test -n "$(KEYSTORE_PASSWORD)" || (echo "ERROR: KEYSTORE_PASSWORD is required"; exit 1)
+	@test -n "$(KEY_ALIAS)" || (echo "ERROR: KEY_ALIAS is required"; exit 1)
+	@test -n "$(KEY_PASSWORD)" || (echo "ERROR: KEY_PASSWORD is required"; exit 1)
+	$(GRADLE) assembleRelease \
+		-Pandroid.injected.signing.store.file="$(KEYSTORE_PATH)" \
+		-Pandroid.injected.signing.store.password="$(KEYSTORE_PASSWORD)" \
+		-Pandroid.injected.signing.key.alias="$(KEY_ALIAS)" \
+		-Pandroid.injected.signing.key.password="$(KEY_PASSWORD)"
+	@echo ""
+	@echo "=========================================="
+	@echo "SIGNED RELEASE BUILD SUCCESSFUL"
 	@echo "=========================================="
 	@echo "APK: app/build/outputs/apk/release/app-release.apk"
 	@echo ""
@@ -84,8 +103,10 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
+	@echo "  debug         Build the APK (debug)"
 	@echo "  build         Build the APK (debug)"
 	@echo "  build-release Build the APK (release)"
+	@echo "  release-signed Build signed release APK (requires keystore env vars)"
 	@echo "  install       Install debug APK to device"
 	@echo "  run           Build, install and run the app"
 	@echo "  log           View logcat"
