@@ -35,6 +35,17 @@ export KEY_PASSWORD=your_key_password
 make release-signed
 ```
 
+Jika muncul error `KEYSTORE_PATH is required`, berarti environment variable belum diset di shell yang sama.
+
+Contoh one-liner (tanpa export permanen):
+```bash
+KEYSTORE_PATH=build/release.keystore \
+KEY_ALIAS=release \
+KEYSTORE_PASSWORD=your_keystore_password \
+KEY_PASSWORD=your_key_password \
+make release-signed
+```
+
 ## Features
 
 ### Core Features
