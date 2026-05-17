@@ -41,8 +41,8 @@ abstract class BottomNavigationActivity : AppCompatActivity() {
         val intent = Intent(this, target).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        startActivity(intent)
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        val options = android.app.ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in, android.R.anim.fade_out).toBundle()
+        startActivity(intent, options)
     }
 
     protected fun <T> Flow<T>.collectInScope(action: suspend (T) -> Unit) {

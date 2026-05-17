@@ -8,10 +8,12 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Spinner
 import android.widget.TextView
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.activity.result.contract.ActivityResultContracts
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
 import com.aminmart.moneymanager.domain.model.Transaction
@@ -35,6 +37,12 @@ class TransactionsActivity : BottomNavigationActivity() {
     private lateinit var textFilterInfo: TextView
 
     private lateinit var adapter: TransactionAdapter
+
+    private val addTransactionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.loadTransactions() // Reload data if transaction was added/edited
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -141,7 +149,7 @@ class TransactionsActivity : BottomNavigationActivity() {
         transaction?.let {
             intent.putExtra("transaction_id", it.id)
         }
-        startActivityForResult(intent, MainActivity.REQUEST_ADD_TRANSACTION)
+        addTransactionLauncher.launch(intent)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -172,13 +180,42 @@ class TransactionsActivity : BottomNavigationActivity() {
         val spinnerType = view.findViewById<Spinner>(R.id.spinner_filter_type)
         val spinnerCategory = view.findViewById<Spinner>(R.id.spinner_filter_category)
 
-        // Setup spinners would go here
+        // Setup Type Spinner
+        val typeOptions = listOf("All") + Transaction.TransactionType.values().map { it.name }
+        val typeAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, typeOptions)
+        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerType.adapter = typeAdapter
+
+        viewModel.filterType.value?.let { currentType ->
+            spinnerType.setSelection(typeOptions.indexOf(currentType.name))
+        } ?: spinnerType.setSelection(0) // "All" is at index 0
+
+        // Setup Category Spinner
+        val categories = listOf("All Categories") + viewModel.getCategories()
+        val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerCategory.adapter = categoryAdapter
+
+        viewModel.filterCategory.value?.let { currentCategory ->
+            spinnerCategory.setSelection(categories.indexOf(currentCategory))
+        } ?: spinnerCategory.setSelection(0) // "All Categories" is at index 0
 
         AlertDialog.Builder(this)
             .setTitle("Filter Transactions")
             .setView(view)
             .setPositiveButton("Apply") { _, _ ->
-                // Apply filters
+                val selectedType = if (spinnerType.selectedItemPosition > 0) {
+                    Transaction.TransactionType.valueOf(typeOptions[spinnerType.selectedItemPosition])
+                } else {
+                    null
+                }
+                val selectedCategory = if (spinnerCategory.selectedItemPosition > 0) {
+                    categories[spinnerCategory.selectedItemPosition]
+                } else {
+                    null
+                }
+                viewModel.setFilterType(selectedType)
+                viewModel.setFilterCategory(selectedCategory)
             }
             .setNegativeButton("Cancel", null)
             .show()

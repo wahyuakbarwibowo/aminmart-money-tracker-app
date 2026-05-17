@@ -10,6 +10,8 @@ import com.aminmart.moneymanager.R
 import com.aminmart.moneymanager.domain.model.Transaction
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
+import androidx.activity.result.contract.ActivityResultContracts
+
 /**
  * Main Activity with Bottom Navigation
  * Serves as the container for all fragments/screens
@@ -18,6 +20,23 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var bottomNavigation: BottomNavigationView
     private lateinit var container: FrameLayout
+
+    private val addTransactionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // Refresh logic after adding a transaction
+            // For MainActivity, this usually means refreshing the currently displayed fragment/data
+            // Since MainActivity acts as a host, it might need to notify its fragments or reload its own data if it displays any
+            // For now, let's just trigger a generic refresh, which can be expanded later
+            updateNavigationSelection() // This might indirectly trigger refresh in current fragment
+        }
+    }
+
+    private val editTransactionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // Refresh logic after editing a transaction
+            updateNavigationSelection() // This might indirectly trigger refresh in current fragment
+        }
+    }
 
     companion object {
         const val REQUEST_ADD_TRANSACTION = 100
@@ -68,51 +87,32 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showDashboard() {
-        startActivity(Intent(this, DashboardActivity::class.java))
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        startActivityWithFade(Intent(this, DashboardActivity::class.java))
     }
 
     private fun showTransactions() {
-        startActivity(Intent(this, TransactionsActivity::class.java))
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        startActivityWithFade(Intent(this, TransactionsActivity::class.java))
     }
 
     private fun showBudget() {
-        startActivity(Intent(this, BudgetActivity::class.java))
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        startActivityWithFade(Intent(this, BudgetActivity::class.java))
     }
 
     private fun showStatistics() {
-        startActivity(Intent(this, StatisticsActivity::class.java))
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        startActivityWithFade(Intent(this, StatisticsActivity::class.java))
     }
 
     private fun showSettings() {
-        startActivity(Intent(this, SettingsActivity::class.java))
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        startActivityWithFade(Intent(this, SettingsActivity::class.java))
     }
 
     fun navigateToAddTransaction(transaction: Transaction? = null) {
         val intent = Intent(this, AddTransactionActivity::class.java)
         transaction?.let {
             intent.putExtra("transaction_id", it.id)
-        }
-        startActivityForResult(
-            intent,
-            if (transaction == null) REQUEST_ADD_TRANSACTION else REQUEST_EDIT_TRANSACTION
-        )
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        
-        if (resultCode == Activity.RESULT_OK) {
-            // Refresh current screen
-            when (requestCode) {
-                REQUEST_ADD_TRANSACTION, REQUEST_EDIT_TRANSACTION -> {
-                    // Broadcast refresh event or reload data
-                }
-            }
+            editTransactionLauncher.launch(intent)
+        } ?: run {
+            addTransactionLauncher.launch(intent)
         }
     }
 
@@ -131,5 +131,10 @@ class MainActivity : AppCompatActivity() {
             currentActivity.contains("Statistics") -> bottomNavigation.selectedItemId = R.id.nav_statistics
             currentActivity.contains("Settings") -> bottomNavigation.selectedItemId = R.id.nav_settings
         }
+    }
+
+    private fun startActivityWithFade(intent: Intent) {
+        val options = android.app.ActivityOptions.makeCustomAnimation(this, android.R.anim.fade_in, android.R.anim.fade_out).toBundle()
+        startActivity(intent, options)
     }
 }

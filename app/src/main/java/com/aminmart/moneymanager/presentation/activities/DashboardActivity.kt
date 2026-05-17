@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.activity.result.contract.ActivityResultContracts
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
 import com.aminmart.moneymanager.domain.model.DashboardStats
@@ -42,6 +43,12 @@ class DashboardActivity : BottomNavigationActivity() {
 
     private lateinit var adapter: TransactionAdapter
 
+    private val addTransactionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.loadDashboardData() // Reload data if transaction was added/edited
+        }
+    }
+
     private val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply {
         maximumFractionDigits = 0
     }
@@ -54,7 +61,8 @@ class DashboardActivity : BottomNavigationActivity() {
         viewModel = DashboardViewModel(
             app.getDashboardStatsUseCase,
             app.getRecentTransactionsUseCase,
-            app.debtUseCases
+            app.debtUseCases,
+            app.deleteTransactionUseCase
         )
 
         initViews()
@@ -160,7 +168,8 @@ class DashboardActivity : BottomNavigationActivity() {
             .setTitle("Delete Transaction")
             .setMessage("Are you sure you want to delete this transaction?")
             .setPositiveButton("Delete") { _, _ ->
-                // Delete transaction would be handled by ViewModel
+                viewModel.deleteTransaction(transaction.id)
+                viewModel.loadDashboardData() // Reload data after deletion
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -189,7 +198,7 @@ class DashboardActivity : BottomNavigationActivity() {
         transaction?.let {
             intent.putExtra("transaction_id", it.id)
         }
-        startActivityForResult(intent, MainActivity.REQUEST_ADD_TRANSACTION)
+        addTransactionLauncher.launch(intent)
     }
 
     override fun onResume() {

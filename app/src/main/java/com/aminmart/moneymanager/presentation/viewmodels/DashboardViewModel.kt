@@ -6,6 +6,7 @@ import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.domain.usecase.DebtUseCases
 import com.aminmart.moneymanager.domain.usecase.GetDashboardStatsUseCase
 import com.aminmart.moneymanager.domain.usecase.GetRecentTransactionsUseCase
+import com.aminmart.moneymanager.domain.usecase.DeleteTransactionUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +26,8 @@ import kotlinx.coroutines.launch
 class DashboardViewModel(
     private val getDashboardStatsUseCase: GetDashboardStatsUseCase,
     private val getRecentTransactionsUseCase: GetRecentTransactionsUseCase,
-    private val debtUseCases: DebtUseCases
+    private val debtUseCases: DebtUseCases,
+    private val deleteTransactionUseCase: DeleteTransactionUseCase
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var loadJob: Job? = null
@@ -104,6 +106,12 @@ class DashboardViewModel(
 
     fun clear() {
         scope.cancel()
+    }
+
+    fun deleteTransaction(transactionId: Long) {
+        scope.launch {
+            deleteTransactionUseCase(transactionId)
+        }
     }
 }
 

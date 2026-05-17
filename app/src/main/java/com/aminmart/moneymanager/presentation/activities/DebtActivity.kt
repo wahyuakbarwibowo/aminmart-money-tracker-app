@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.activity.result.contract.ActivityResultContracts
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
 import com.aminmart.moneymanager.domain.model.Debt
@@ -32,6 +33,12 @@ class DebtActivity : AppCompatActivity() {
     private lateinit var fabAdd: FloatingActionButton
     private lateinit var emptyView: View
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    private val addDebtLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            viewModel.loadDebts() // Reload debts if changes were made
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -122,11 +129,11 @@ class DebtActivity : AppCompatActivity() {
         debt?.let {
             intent.putExtra("debt_id", it.id)
         }
-        startActivityForResult(intent, REQUEST_ADD_DEBT)
+        addDebtLauncher.launch(intent)
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        onBackPressed()
+        finish()
         return true
     }
 

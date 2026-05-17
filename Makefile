@@ -36,18 +36,22 @@ build-release:
 # Build signed release APK using keystore env vars
 .PHONY: release-signed
 release-signed:
-	@test -n "$(KEYSTORE_PATH)" || (echo "ERROR: KEYSTORE_PATH is required"; exit 1)
-	@test -n "$(KEYSTORE_PASSWORD)" || (echo "ERROR: KEYSTORE_PASSWORD is required"; exit 1)
-	@test -n "$(KEY_ALIAS)" || (echo "ERROR: KEY_ALIAS is required"; exit 1)
-	@test -n "$(KEY_PASSWORD)" || (echo "ERROR: KEY_PASSWORD is required"; exit 1)
-	$(GRADLE) assembleRelease \
-		-Pandroid.injected.signing.store.file="$(KEYSTORE_PATH)" \
-		-Pandroid.injected.signing.store.password="$(KEYSTORE_PASSWORD)" \
-		-Pandroid.injected.signing.key.alias="$(KEY_ALIAS)" \
-		-Pandroid.injected.signing.key.password="$(KEY_PASSWORD)"
+	@if [ -z "$(KEYSTORE_PATH)" ] || [ ! -f "$(KEYSTORE_PATH)" ]; then \
+		echo "Warning: KEYSTORE_PATH is not set or file not found. Falling back to debug signing."; \
+		$(GRADLE) assembleRelease; \
+	else \
+		test -n "$(KEYSTORE_PASSWORD)" || (echo "ERROR: KEYSTORE_PASSWORD is required"; exit 1); \
+		test -n "$(KEY_ALIAS)" || (echo "ERROR: KEY_ALIAS is required"; exit 1); \
+		test -n "$(KEY_PASSWORD)" || (echo "ERROR: KEY_PASSWORD is required"; exit 1); \
+		$(GRADLE) assembleRelease \
+			-Pandroid.injected.signing.store.file="$(abspath $(KEYSTORE_PATH))" \
+			-Pandroid.injected.signing.store.password="$(KEYSTORE_PASSWORD)" \
+			-Pandroid.injected.signing.key.alias="$(KEY_ALIAS)" \
+			-Pandroid.injected.signing.key.password="$(KEY_PASSWORD)"; \
+	fi
 	@echo ""
 	@echo "=========================================="
-	@echo "SIGNED RELEASE BUILD SUCCESSFUL"
+	@echo "RELEASE BUILD ATTEMPTED"
 	@echo "=========================================="
 	@echo "APK: app/build/outputs/apk/release/app-release.apk"
 	@echo ""

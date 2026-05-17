@@ -20,6 +20,12 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Default to debug signing for local testing, but allow injection for production
+            if (project.hasProperty("android.injected.signing.store.file")) {
+                // Injected properties will be handled automatically by AGP if not explicitly overridden
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
