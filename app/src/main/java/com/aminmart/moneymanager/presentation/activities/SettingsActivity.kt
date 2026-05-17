@@ -16,7 +16,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -31,11 +30,12 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 /**
  * Settings Activity - Backup, Restore, Import, Export
  */
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : BottomNavigationActivity() {
 
     private lateinit var app: MoneyManagerApplication
     private lateinit var viewModel: SettingsViewModel
@@ -91,7 +91,9 @@ class SettingsActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
         supportActionBar?.title = "Settings"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        toolbar.navigationIcon = null
+        setupBottomNavigation(R.id.nav_settings)
 
         // Set backup location text
         textBackupLocation.text = viewModel.getBackupFolder()
@@ -183,7 +185,7 @@ class SettingsActivity : AppCompatActivity() {
         backupDir.mkdirs()
         val destinationPath = File(backupDir, fileName).absolutePath
 
-        kotlinx.coroutines.runBlocking {
+        activityScope.launch {
             val result = viewModel.createBackup(BackupRepository.BackupFormat.JSON, destinationPath)
             if (result != null) {
                 Toast.makeText(this@SettingsActivity, "Backup created: $fileName", Toast.LENGTH_LONG).show()
@@ -261,7 +263,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun restoreBackup(path: String) {
-        kotlinx.coroutines.runBlocking {
+        activityScope.launch {
             try {
                 val success = viewModel.restoreBackup(path)
                 if (success) {
@@ -280,7 +282,7 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle("Delete Backup")
             .setMessage("Delete ${File(path).name}?")
             .setPositiveButton("Delete") { _, _ ->
-                kotlinx.coroutines.runBlocking {
+                activityScope.launch {
                     val success = viewModel.deleteBackup(path)
                     if (success) {
                         Toast.makeText(this@SettingsActivity, "Backup deleted", Toast.LENGTH_SHORT).show()
@@ -307,12 +309,6 @@ class SettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.loadBackups()
-    }
-
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
-        }
     }
 }
 

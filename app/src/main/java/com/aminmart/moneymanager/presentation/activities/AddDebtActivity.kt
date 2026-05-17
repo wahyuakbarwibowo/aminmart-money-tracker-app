@@ -11,7 +11,11 @@ import com.aminmart.moneymanager.domain.model.Debt
 import com.aminmart.moneymanager.presentation.viewmodels.DebtViewModel
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -20,6 +24,7 @@ class AddDebtActivity : AppCompatActivity() {
     private lateinit var viewModel: DebtViewModel
     private var editingDebt: Debt? = null
     private var dueDateCalendar: Calendar = Calendar.getInstance()
+    private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private lateinit var toolbar: Toolbar
     private lateinit var personNameEditText: TextInputEditText
@@ -96,22 +101,24 @@ class AddDebtActivity : AppCompatActivity() {
         dueDateEditText.setText(sdf.format(dueDateCalendar.time))
     }
 
-    private fun loadEditingDebt(debtId: Long) = runBlocking {
-        editingDebt = viewModel.getDebt(debtId)
-        editingDebt?.let { debt ->
-            personNameEditText.setText(debt.personName)
-            amountEditText.setText(debt.amount.toString())
-            descriptionEditText.setText(debt.description)
-            paidSwitch.isChecked = debt.isPaid
-            dueDateCalendar.timeInMillis = debt.dueDate
-            updateDueDateInView()
+    private fun loadEditingDebt(debtId: Long) {
+        activityScope.launch {
+            editingDebt = viewModel.getDebt(debtId)
+            editingDebt?.let { debt ->
+                personNameEditText.setText(debt.personName)
+                amountEditText.setText(debt.amount.toString())
+                descriptionEditText.setText(debt.description)
+                paidSwitch.isChecked = debt.isPaid
+                dueDateCalendar.timeInMillis = debt.dueDate
+                updateDueDateInView()
 
-            if (debt.type == Debt.DebtType.CREDIT) {
-                creditRadioButton.isChecked = true
-            } else {
-                debtRadioButton.isChecked = true
+                if (debt.type == Debt.DebtType.CREDIT) {
+                    creditRadioButton.isChecked = true
+                } else {
+                    debtRadioButton.isChecked = true
+                }
+                supportActionBar?.title = "Edit Debt"
             }
-            supportActionBar?.title = "Edit Debt"
         }
     }
 
@@ -150,12 +157,10 @@ class AddDebtActivity : AppCompatActivity() {
             updatedAt = now
         )
 
-        runBlocking {
-            if (editingDebt == null) {
-                viewModel.addDebt(debt)
-            } else {
-                viewModel.updateDebt(debt)
-            }
+        if (editingDebt == null) {
+            viewModel.addDebt(debt)
+        } else {
+            viewModel.updateDebt(debt)
         }
         finish()
     }
@@ -163,5 +168,10 @@ class AddDebtActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true
+    }
+
+    override fun onDestroy() {
+        activityScope.cancel()
+        super.onDestroy()
     }
 }

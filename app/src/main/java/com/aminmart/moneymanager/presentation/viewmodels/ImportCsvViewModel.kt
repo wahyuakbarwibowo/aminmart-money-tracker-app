@@ -5,9 +5,11 @@ import com.aminmart.moneymanager.domain.repository.CsvImportResult
 import com.aminmart.moneymanager.domain.usecase.GetCsvPreviewUseCase
 import com.aminmart.moneymanager.domain.usecase.ImportCsvUseCase
 import com.aminmart.moneymanager.domain.usecase.ValidateCsvUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for Import CSV screen
@@ -28,14 +30,18 @@ class ImportCsvViewModel(
     val importResult: StateFlow<CsvImportResult?> = _importResult.asStateFlow()
 
     suspend fun validateCsvFile(filePath: String): Boolean {
-        return validateCsvUseCase(filePath)
+        return withContext(Dispatchers.IO) {
+            validateCsvUseCase(filePath)
+        }
     }
 
     suspend fun loadPreview(filePath: String) {
         _uiState.value = _uiState.value.copy(isLoading = true)
         
         try {
-            val transactions = getCsvPreviewUseCase(filePath, 20)
+            val transactions = withContext(Dispatchers.IO) {
+                getCsvPreviewUseCase(filePath, 20)
+            }
             _preview.value = transactions
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
@@ -53,7 +59,9 @@ class ImportCsvViewModel(
         _uiState.value = _uiState.value.copy(isLoading = true)
         
         try {
-            val result = importCsvUseCase(filePath, skipDuplicates = true)
+            val result = withContext(Dispatchers.IO) {
+                importCsvUseCase(filePath, skipDuplicates = true)
+            }
             _importResult.value = result
             
             _uiState.value = _uiState.value.copy(

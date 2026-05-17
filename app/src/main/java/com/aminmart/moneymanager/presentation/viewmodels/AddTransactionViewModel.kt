@@ -7,11 +7,12 @@ import com.aminmart.moneymanager.domain.usecase.GetTransactionByIdUseCase
 import com.aminmart.moneymanager.domain.usecase.UpdateTransactionUseCase
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for Add/Edit Transaction screen
@@ -81,7 +82,9 @@ class AddTransactionViewModel(
 
         viewModelScope.launch {
             try {
-                val transaction = getTransactionByIdUseCase(transactionId)
+                val transaction = withContext(Dispatchers.IO) {
+                    getTransactionByIdUseCase(transactionId)
+                }
                 transaction?.let {
                     _transactionState.value = it
                 }
@@ -105,10 +108,12 @@ class AddTransactionViewModel(
 
         _uiState.value = _uiState.value.copy(isLoading = true)
         try {
-            if (transaction.id == 0L) {
-                addTransactionUseCase(transaction)
-            } else {
-                updateTransactionUseCase(transaction)
+            withContext(Dispatchers.IO) {
+                if (transaction.id == 0L) {
+                    addTransactionUseCase(transaction)
+                } else {
+                    updateTransactionUseCase(transaction)
+                }
             }
             _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Transaction saved!")
         } catch (e: Exception) {

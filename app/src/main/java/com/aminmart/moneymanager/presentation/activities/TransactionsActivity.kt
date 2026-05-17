@@ -9,7 +9,6 @@ import android.view.View
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,11 +18,12 @@ import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.presentation.adapters.TransactionAdapter
 import com.aminmart.moneymanager.presentation.viewmodels.TransactionsViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.launch
 
 /**
  * Transactions Activity - List all transactions with filtering
  */
-class TransactionsActivity : AppCompatActivity() {
+class TransactionsActivity : BottomNavigationActivity() {
 
     private lateinit var app: MoneyManagerApplication
     private lateinit var viewModel: TransactionsViewModel
@@ -67,7 +67,9 @@ class TransactionsActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
         supportActionBar?.title = "Transactions"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        toolbar.navigationIcon = null
+        setupBottomNavigation(R.id.nav_transactions)
     }
 
     private fun setupRecyclerView() {
@@ -125,7 +127,7 @@ class TransactionsActivity : AppCompatActivity() {
             .setTitle("Delete Transaction")
             .setMessage("Are you sure you want to delete this transaction?")
             .setPositiveButton("Delete") { _, _ ->
-                kotlinx.coroutines.runBlocking {
+                activityScope.launch {
                     viewModel.deleteTransaction(transaction.id)
                     viewModel.loadTransactions()
                 }
@@ -187,9 +189,10 @@ class TransactionsActivity : AppCompatActivity() {
         viewModel.loadTransactions()
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
+    override fun onDestroy() {
+        if (::viewModel.isInitialized) {
+            viewModel.clear()
         }
+        super.onDestroy()
     }
 }

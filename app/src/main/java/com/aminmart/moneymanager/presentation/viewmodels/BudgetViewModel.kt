@@ -6,9 +6,18 @@ import com.aminmart.moneymanager.domain.usecase.DeleteBudgetUseCase
 import com.aminmart.moneymanager.domain.usecase.GetAllBudgetsUseCase
 import com.aminmart.moneymanager.domain.usecase.GetBudgetByCategoryUseCase
 import com.aminmart.moneymanager.domain.usecase.SaveBudgetUseCase
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for Budget screen
@@ -19,6 +28,8 @@ class BudgetViewModel(
     private val deleteBudgetUseCase: DeleteBudgetUseCase,
     private val getBudgetByCategoryUseCase: GetBudgetByCategoryUseCase
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var loadJob: Job? = null
 
     private val _uiState = MutableStateFlow(BudgetUiState())
     val uiState: StateFlow<BudgetUiState> = _uiState.asStateFlow()
@@ -34,15 +45,29 @@ class BudgetViewModel(
     }
 
     fun loadBudgets() {
-        _uiState.value = _uiState.value.copy(isLoading = true)
+        loadJob?.cancel()
+        loadJob = scope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
 
-        getAllBudgetsUseCase().collectInScope { list ->
-            val monthBudgets = list.filter { it.month == _currentMonth.value }
-            _budgets.value = monthBudgets
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                error = null
-            )
+            try {
+                getAllBudgetsUseCase()
+                    .flowOn(Dispatchers.IO)
+                    .collect { list ->
+                        val monthBudgets = list.filter { it.month == _currentMonth.value }
+                        _budgets.value = monthBudgets
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = null
+                        )
+                    }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to load budgets"
+                )
+            }
         }
     }
 
@@ -52,15 +77,17 @@ class BudgetViewModel(
     }
 
     suspend fun saveBudget(budget: Budget): Long {
-        return saveBudgetUseCase(budget)
+        return withContext(Dispatchers.IO) { saveBudgetUseCase(budget) }
     }
 
     suspend fun deleteBudget(id: Long) {
-        deleteBudgetUseCase(id)
+        withContext(Dispatchers.IO) { deleteBudgetUseCase(id) }
     }
 
     suspend fun getBudgetForCategory(category: String): Budget? {
-        return getBudgetByCategoryUseCase(category, _currentMonth.value)
+        return withContext(Dispatchers.IO) {
+            getBudgetByCategoryUseCase(category, _currentMonth.value)
+        }
     }
 
     fun getTotalBudget(): Double {
@@ -87,10 +114,8 @@ class BudgetViewModel(
         return String.format("%04d-%02d", year, month)
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
-        }
+    fun clear() {
+        scope.cancel()
     }
 }
 

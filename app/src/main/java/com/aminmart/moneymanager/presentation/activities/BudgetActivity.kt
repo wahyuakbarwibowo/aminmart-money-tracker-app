@@ -9,7 +9,6 @@ import android.widget.TextView
 import android.widget.AutoCompleteTextView
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -24,11 +23,12 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import java.text.NumberFormat
 import java.util.Locale
 import java.util.Calendar
+import kotlinx.coroutines.launch
 
 /**
  * Budget Activity - Manage monthly budgets
  */
-class BudgetActivity : AppCompatActivity() {
+class BudgetActivity : BottomNavigationActivity() {
 
     private lateinit var app: MoneyManagerApplication
     private lateinit var viewModel: BudgetViewModel
@@ -82,7 +82,9 @@ class BudgetActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
         supportActionBar?.title = "Budget Planner"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        toolbar.navigationIcon = null
+        setupBottomNavigation(R.id.nav_budget)
 
         textMonth.setOnClickListener {
             showMonthPicker()
@@ -197,7 +199,7 @@ class BudgetActivity : AppCompatActivity() {
                         monthlyBudget = amount,
                         month = viewModel.currentMonth.value
                     )
-                    kotlinx.coroutines.runBlocking {
+                    activityScope.launch {
                         viewModel.saveBudget(budget)
                         viewModel.loadBudgets()
                     }
@@ -226,7 +228,7 @@ class BudgetActivity : AppCompatActivity() {
                         category = editCategory.text.toString(),
                         monthlyBudget = amount
                     )
-                    kotlinx.coroutines.runBlocking {
+                    activityScope.launch {
                         viewModel.saveBudget(updatedBudget)
                         viewModel.loadBudgets()
                     }
@@ -244,7 +246,7 @@ class BudgetActivity : AppCompatActivity() {
             .setTitle("Delete Budget")
             .setMessage("Are you sure you want to delete this budget?")
             .setPositiveButton("Delete") { _, _ ->
-                kotlinx.coroutines.runBlocking {
+                activityScope.launch {
                     viewModel.deleteBudget(budget.id)
                     viewModel.loadBudgets()
                 }
@@ -284,9 +286,10 @@ class BudgetActivity : AppCompatActivity() {
         viewModel.loadBudgets()
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
+    override fun onDestroy() {
+        if (::viewModel.isInitialized) {
+            viewModel.clear()
         }
+        super.onDestroy()
     }
 }

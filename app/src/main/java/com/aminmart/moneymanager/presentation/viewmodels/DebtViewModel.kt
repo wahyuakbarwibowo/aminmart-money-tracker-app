@@ -4,11 +4,13 @@ import com.aminmart.moneymanager.domain.model.Debt
 import com.aminmart.moneymanager.domain.usecase.DebtUseCases
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for Debts screen
@@ -30,7 +32,7 @@ class DebtViewModel(
     fun loadDebts() {
         _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch {
-            debtUseCases.getAllDebts().collect { debtList ->
+            debtUseCases.getAllDebts().flowOn(Dispatchers.IO).collect { debtList ->
                 _debts.value = debtList
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
@@ -39,28 +41,34 @@ class DebtViewModel(
 
     fun deleteDebt(debt: Debt) {
         viewModelScope.launch {
-            debtUseCases.deleteDebt(debt.id)
+            withContext(Dispatchers.IO) { debtUseCases.deleteDebt(debt.id) }
             loadDebts()
         }
     }
 
     fun deleteDebtById(id: Long) {
         viewModelScope.launch {
-            debtUseCases.deleteDebt(id)
+            withContext(Dispatchers.IO) { debtUseCases.deleteDebt(id) }
             loadDebts()
         }
     }
 
     suspend fun getDebt(id: Long): Debt? {
-        return debtUseCases.getDebtById(id)
+        return withContext(Dispatchers.IO) { debtUseCases.getDebtById(id) }
     }
 
-    suspend fun addDebt(debt: Debt) {
-        debtUseCases.addDebt(debt)
+    fun addDebt(debt: Debt) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { debtUseCases.addDebt(debt) }
+            loadDebts()
+        }
     }
 
-    suspend fun updateDebt(debt: Debt) {
-        debtUseCases.updateDebt(debt)
+    fun updateDebt(debt: Debt) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { debtUseCases.updateDebt(debt) }
+            loadDebts()
+        }
     }
 }
 

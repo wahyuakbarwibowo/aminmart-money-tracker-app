@@ -14,8 +14,12 @@ import com.aminmart.moneymanager.domain.model.Debt
 import com.aminmart.moneymanager.presentation.adapters.DebtAdapter
 import com.aminmart.moneymanager.presentation.viewmodels.DebtViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 class DebtActivity : AppCompatActivity() {
 
@@ -27,6 +31,7 @@ class DebtActivity : AppCompatActivity() {
     private lateinit var recyclerDebts: RecyclerView
     private lateinit var fabAdd: FloatingActionButton
     private lateinit var emptyView: View
+    private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,11 +79,9 @@ class DebtActivity : AppCompatActivity() {
     }
 
     private fun observeViewModel() {
-        runBlocking {
-            viewModel.debts.collect { debts ->
-                debtAdapter.submitList(debts)
-                emptyView.visibility = if (debts.isEmpty()) View.VISIBLE else View.GONE
-            }
+        viewModel.debts.collectInScope { debts ->
+            debtAdapter.submitList(debts)
+            emptyView.visibility = if (debts.isEmpty()) View.VISIBLE else View.GONE
         }
     }
 
@@ -103,10 +106,7 @@ class DebtActivity : AppCompatActivity() {
             .setTitle("Delete Debt")
             .setMessage("Are you sure you want to delete this record?")
             .setPositiveButton("Delete") { _, _ ->
-                runBlocking {
-                    viewModel.deleteDebt(debt)
-                    viewModel.loadDebts()
-                }
+                viewModel.deleteDebt(debt)
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -114,10 +114,7 @@ class DebtActivity : AppCompatActivity() {
 
     private fun togglePaidStatus(debt: Debt) {
         val updatedDebt = debt.copy(isPaid = !debt.isPaid)
-        runBlocking {
-            viewModel.updateDebt(updatedDebt)
-            viewModel.loadDebts()
-        }
+        viewModel.updateDebt(updatedDebt)
     }
 
     private fun navigateToAddDebt(debt: Debt? = null) {
@@ -131,6 +128,17 @@ class DebtActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true
+    }
+
+    override fun onDestroy() {
+        activityScope.cancel()
+        super.onDestroy()
+    }
+
+    private fun <T> Flow<T>.collectInScope(action: suspend (T) -> Unit) {
+        activityScope.launch {
+            collect { action(it) }
+        }
     }
 
     companion object {

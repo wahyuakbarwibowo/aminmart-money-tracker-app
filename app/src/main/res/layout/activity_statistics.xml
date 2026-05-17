@@ -24,6 +24,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginBottom="56dp"
         android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
@@ -82,29 +83,25 @@
         </com.google.android.material.card.MaterialCardView>
 
         <!-- Empty View -->
-        <View
+        <LinearLayout
             android:id="@+id/view_statistics_empty"
             android:layout_width="match_parent"
             android:layout_height="200dp"
+            android:gravity="center"
+            android:orientation="vertical"
             android:visibility="gone">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No expense data available"
+                android:textColor="@color/text_secondary"
+                android:textSize="16sp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="No expense data available"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="16sp" />
-
-            </LinearLayout>
-
-        </View>
+        </LinearLayout>
 
     </LinearLayout>
+
+    <include layout="@layout/include_bottom_navigation" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

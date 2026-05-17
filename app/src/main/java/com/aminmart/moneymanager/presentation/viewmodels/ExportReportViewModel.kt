@@ -4,9 +4,11 @@ import com.aminmart.moneymanager.domain.usecase.ExportToCsvUseCase
 import com.aminmart.moneymanager.domain.usecase.ExportToExcelUseCase
 import com.aminmart.moneymanager.domain.usecase.ExportReportUseCase
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for Export Report screen
@@ -26,7 +28,9 @@ class ExportReportViewModel(
         endDate: Long? = null
     ): String? {
         return try {
-            exportToCsvUseCase(destinationPath, startDate, endDate)
+            withContext(Dispatchers.IO) {
+                exportToCsvUseCase(destinationPath, startDate, endDate)
+            }
         } catch (e: Exception) {
             null
         }
@@ -38,7 +42,9 @@ class ExportReportViewModel(
         endDate: Long? = null
     ): String? {
         return try {
-            exportToExcelUseCase(destinationPath, startDate, endDate)
+            withContext(Dispatchers.IO) {
+                exportToExcelUseCase(destinationPath, startDate, endDate)
+            }
         } catch (e: Exception) {
             null
         }
@@ -49,7 +55,9 @@ class ExportReportViewModel(
         format: com.aminmart.moneymanager.domain.repository.ExportRepository.ExportFormat
     ): String? {
         return try {
-            exportReportUseCase(destinationPath, format)
+            withContext(Dispatchers.IO) {
+                exportReportUseCase(destinationPath, format)
+            }
         } catch (e: Exception) {
             null
         }

@@ -20,6 +20,12 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import java.io.File
 import java.io.FileOutputStream
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 /**
  * Import CSV Activity - Import transactions from bank CSV files
@@ -39,6 +45,7 @@ class ImportCsvActivity : AppCompatActivity() {
     private lateinit var viewEmpty: View
 
     private var selectedFileUri: Uri? = null
+    private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private val filePickerLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -140,7 +147,7 @@ class ImportCsvActivity : AppCompatActivity() {
             textFileName.text = tempFile.name
             
             // Validate and preview
-            kotlinx.coroutines.runBlocking {
+            activityScope.launch {
                 val isValid = viewModel.validateCsvFile(tempFile.absolutePath)
                 if (isValid) {
                     viewModel.loadPreview(tempFile.absolutePath)
@@ -164,7 +171,7 @@ class ImportCsvActivity : AppCompatActivity() {
                     }
                 }
 
-                kotlinx.coroutines.runBlocking {
+                activityScope.launch {
                     viewModel.importCsv(tempFile.absolutePath)
                 }
             } catch (e: Exception) {
@@ -196,8 +203,13 @@ class ImportCsvActivity : AppCompatActivity() {
         }
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
+    override fun onDestroy() {
+        activityScope.cancel()
+        super.onDestroy()
+    }
+
+    private fun <T> Flow<T>.collectInScope(action: suspend (T) -> Unit) {
+        activityScope.launch {
             collect { action(it) }
         }
     }

@@ -6,11 +6,18 @@ import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.domain.usecase.DebtUseCases
 import com.aminmart.moneymanager.domain.usecase.GetDashboardStatsUseCase
 import com.aminmart.moneymanager.domain.usecase.GetRecentTransactionsUseCase
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for Dashboard screen
@@ -20,6 +27,8 @@ class DashboardViewModel(
     private val getRecentTransactionsUseCase: GetRecentTransactionsUseCase,
     private val debtUseCases: DebtUseCases
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var loadJob: Job? = null
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
@@ -38,32 +47,54 @@ class DashboardViewModel(
     }
 
     fun loadDashboardData() {
-        _uiState.value = _uiState.value.copy(isLoading = true)
+        loadJob?.cancel()
+        loadJob = scope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
 
-        // Combine stats, recent transactions and debt summary
-        combineAllData()
-    }
+            try {
+                coroutineScope {
+                    launch {
+                        getDashboardStatsUseCase()
+                            .flowOn(Dispatchers.IO)
+                            .collect { stats ->
+                                _stats.value = stats
+                                _uiState.value = _uiState.value.copy(
+                                    isLoading = false,
+                                    error = null
+                                )
+                            }
+                    }
 
-    private fun combineAllData() {
-        // Observe dashboard stats
-        getDashboardStatsUseCase().collectInScope { stats ->
-            _stats.value = stats
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                error = null
-            )
-        }
+                    launch {
+                        getRecentTransactionsUseCase(10)
+                            .flowOn(Dispatchers.IO)
+                            .collect { transactions ->
+                                _recentTransactions.value = transactions
+                            }
+                    }
 
-        // Observe recent transactions
-        getRecentTransactionsUseCase(10).collectInScope { transactions ->
-            _recentTransactions.value = transactions
-        }
-
-        // Observe debts
-        debtUseCases.getAllDebts().collectInScope { debts ->
-            val totalDebt = debts.filter { it.type == Debt.DebtType.DEBT && !it.isPaid }.sumOf { it.amount }
-            val totalCredit = debts.filter { it.type == Debt.DebtType.CREDIT && !it.isPaid }.sumOf { it.amount }
-            _debtSummary.value = DebtSummary(totalDebt, totalCredit)
+                    launch {
+                        debtUseCases.getAllDebts()
+                            .flowOn(Dispatchers.IO)
+                            .collect { debts ->
+                                val totalDebt = debts
+                                    .filter { it.type == Debt.DebtType.DEBT && !it.isPaid }
+                                    .sumOf { it.amount }
+                                val totalCredit = debts
+                                    .filter { it.type == Debt.DebtType.CREDIT && !it.isPaid }
+                                    .sumOf { it.amount }
+                                _debtSummary.value = DebtSummary(totalDebt, totalCredit)
+                            }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to load dashboard data"
+                )
+            }
         }
     }
 
@@ -71,11 +102,8 @@ class DashboardViewModel(
         loadDashboardData()
     }
 
-    private inline fun <T> Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        // Simplified collection - in production use viewModelScope
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
-        }
+    fun clear() {
+        scope.cancel()
     }
 }
 

@@ -86,28 +86,22 @@
             android:layout_weight="1"
             android:layout_marginTop="8dp" />
 
-        <View
+        <LinearLayout
             android:id="@+id/view_import_empty"
             android:layout_width="match_parent"
             android:layout_height="100dp"
+            android:gravity="center"
+            android:orientation="vertical"
             android:visibility="gone">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No preview available"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="No preview available"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
-
-            </LinearLayout>
-
-        </View>
+        </LinearLayout>
 
         <!-- Import Button -->
         <com.google.android.material.button.MaterialButton

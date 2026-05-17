@@ -23,6 +23,11 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * Export Report Activity - Export transactions to CSV/Excel
@@ -39,6 +44,7 @@ class ExportReportActivity : AppCompatActivity() {
 
     private var startDate: Long? = null
     private var endDate: Long? = null
+    private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -197,7 +203,7 @@ class ExportReportActivity : AppCompatActivity() {
         exportDir.mkdirs()
         val destinationPath = File(exportDir, fileName).absolutePath
 
-        kotlinx.coroutines.runBlocking {
+        activityScope.launch {
             val result = if (isExcel) {
                 viewModel.exportToExcel(destinationPath, startDate, endDate)
             } else {
@@ -254,9 +260,8 @@ class ExportReportActivity : AppCompatActivity() {
         }
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
-        }
+    override fun onDestroy() {
+        activityScope.cancel()
+        super.onDestroy()
     }
 }

@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.aminmart.moneymanager.MoneyManagerApplication
@@ -24,7 +23,7 @@ import java.util.Locale
 /**
  * Dashboard Activity - Main screen showing summary and recent transactions
  */
-class DashboardActivity : AppCompatActivity() {
+class DashboardActivity : BottomNavigationActivity() {
 
     private lateinit var app: MoneyManagerApplication
     private lateinit var viewModel: DashboardViewModel
@@ -79,6 +78,7 @@ class DashboardActivity : AppCompatActivity() {
         fabAdd = findViewById(R.id.fab_dashboard_add)
         viewEmpty = findViewById(R.id.view_dashboard_empty)
         cardDebt = findViewById(R.id.card_dashboard_debt)
+        setupBottomNavigation(R.id.nav_dashboard)
 
         cardDebt.setOnClickListener {
             startActivity(Intent(this, DebtActivity::class.java))
@@ -197,9 +197,10 @@ class DashboardActivity : AppCompatActivity() {
         viewModel.loadDashboardData()
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
+    override fun onDestroy() {
+        if (::viewModel.isInitialized) {
+            viewModel.clear()
         }
+        super.onDestroy()
     }
 }

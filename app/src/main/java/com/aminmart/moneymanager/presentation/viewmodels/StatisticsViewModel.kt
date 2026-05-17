@@ -2,9 +2,18 @@ package com.aminmart.moneymanager.presentation.viewmodels
 
 import com.aminmart.moneymanager.domain.usecase.GetExpenseByCategoryUseCase
 import com.aminmart.moneymanager.domain.usecase.GetMonthlyExpensesUseCase
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for Statistics/Charts screen
@@ -13,6 +22,9 @@ class StatisticsViewModel(
     private val getExpenseByCategoryUseCase: GetExpenseByCategoryUseCase,
     private val getMonthlyExpensesUseCase: GetMonthlyExpensesUseCase
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var loadJob: Job? = null
+
 
     private val _uiState = MutableStateFlow(StatisticsUiState())
     val uiState: StateFlow<StatisticsUiState> = _uiState.asStateFlow()
@@ -31,33 +43,47 @@ class StatisticsViewModel(
     }
 
     fun loadStatistics() {
-        _uiState.value = _uiState.value.copy(isLoading = true)
+        loadJob?.cancel()
+        loadJob = scope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
 
-        loadCategoryData()
-        loadMonthlyData()
+            try {
+                val (startDate, endDate) = getPeriodDates(_selectedPeriod.value)
+                coroutineScope {
+                    launch {
+                        getExpenseByCategoryUseCase(startDate, endDate)
+                            .flowOn(Dispatchers.IO)
+                            .collect { data ->
+                                _categoryData.value = data
+                                _uiState.value = _uiState.value.copy(
+                                    isLoading = false,
+                                    error = null
+                                )
+                            }
+                    }
+
+                    launch {
+                        getMonthlyExpensesUseCase(12)
+                            .flowOn(Dispatchers.IO)
+                            .collect { data ->
+                                _monthlyData.value = data
+                            }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to load statistics"
+                )
+            }
+        }
     }
 
     fun setPeriod(period: StatisticsPeriod) {
         _selectedPeriod.value = period
         loadStatistics()
-    }
-
-    private fun loadCategoryData() {
-        val (startDate, endDate) = getPeriodDates(_selectedPeriod.value)
-
-        getExpenseByCategoryUseCase(startDate, endDate).collectInScope { data ->
-            _categoryData.value = data
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                error = null
-            )
-        }
-    }
-
-    private fun loadMonthlyData() {
-        getMonthlyExpensesUseCase(12).collectInScope { data ->
-            _monthlyData.value = data
-        }
     }
 
     fun getTotalExpense(): Double {
@@ -126,10 +152,8 @@ class StatisticsViewModel(
         return cal.timeInMillis
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
-        }
+    fun clear() {
+        scope.cancel()
     }
 }
 

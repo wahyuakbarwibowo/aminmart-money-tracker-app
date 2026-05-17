@@ -24,6 +24,12 @@ import com.google.android.material.textfield.TextInputEditText
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 /**
  * Add/Edit Transaction Activity
@@ -47,6 +53,7 @@ class AddTransactionActivity : AppCompatActivity() {
 
     private val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
     private var transactionId: Long = 0L
+    private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -183,8 +190,7 @@ class AddTransactionActivity : AppCompatActivity() {
     }
 
     private fun saveTransaction() {
-        // ViewModel now handles all logic and validation
-        kotlinx.coroutines.runBlocking {
+        activityScope.launch {
             viewModel.saveTransaction()
         }
     }
@@ -203,10 +209,14 @@ class AddTransactionActivity : AppCompatActivity() {
         }
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
+    override fun onDestroy() {
+        activityScope.cancel()
+        super.onDestroy()
+    }
+
+    private fun <T> Flow<T>.collectInScope(action: suspend (T) -> Unit) {
+        activityScope.launch {
             collect { action(it) }
         }
     }
 }
-

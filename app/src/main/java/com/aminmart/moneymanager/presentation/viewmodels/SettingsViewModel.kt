@@ -1,6 +1,5 @@
 package com.aminmart.moneymanager.presentation.viewmodels
 
-import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.domain.repository.BackupRepository
 import com.aminmart.moneymanager.domain.usecase.AutoBackupUseCase
 import com.aminmart.moneymanager.domain.usecase.CreateBackupUseCase
@@ -9,11 +8,12 @@ import com.aminmart.moneymanager.domain.usecase.GetAvailableBackupsUseCase
 import com.aminmart.moneymanager.domain.usecase.RestoreBackupUseCase
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for Settings screen
@@ -43,7 +43,9 @@ class SettingsViewModel(
 
         viewModelScope.launch {
             try {
-                val backupsList = getAvailableBackupsUseCase()
+                val backupsList = withContext(Dispatchers.IO) {
+                    getAvailableBackupsUseCase()
+                }
                 _backups.value = backupsList
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -56,19 +58,27 @@ class SettingsViewModel(
     }
 
     suspend fun createBackup(format: BackupRepository.BackupFormat, path: String): String? {
-        return createBackupUseCase(format, path)
+        return withContext(Dispatchers.IO) {
+            createBackupUseCase(format, path)
+        }
     }
 
     suspend fun restoreBackup(path: String): Boolean {
-        return restoreBackupUseCase(path)
+        return withContext(Dispatchers.IO) {
+            restoreBackupUseCase(path)
+        }
     }
 
     suspend fun deleteBackup(path: String): Boolean {
-        return deleteBackupUseCase(path)
+        return withContext(Dispatchers.IO) {
+            deleteBackupUseCase(path)
+        }
     }
 
     suspend fun autoBackup(): String? {
-        return autoBackupUseCase()
+        return withContext(Dispatchers.IO) {
+            autoBackupUseCase()
+        }
     }
 
     fun setAutoBackupEnabled(enabled: Boolean) {

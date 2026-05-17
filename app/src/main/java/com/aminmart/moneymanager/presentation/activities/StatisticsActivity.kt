@@ -8,7 +8,6 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Spinner
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
@@ -32,7 +31,7 @@ import java.util.Locale
 /**
  * Statistics Activity - Display charts and graphs
  */
-class StatisticsActivity : AppCompatActivity() {
+class StatisticsActivity : BottomNavigationActivity() {
 
     private lateinit var app: MoneyManagerApplication
     private lateinit var viewModel: StatisticsViewModel
@@ -73,7 +72,9 @@ class StatisticsActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
         supportActionBar?.title = "Statistics"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        toolbar.navigationIcon = null
+        setupBottomNavigation(R.id.nav_statistics)
 
         setupPeriodSpinner()
     }
@@ -231,9 +232,10 @@ class StatisticsActivity : AppCompatActivity() {
         viewModel.loadStatistics()
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
+    override fun onDestroy() {
+        if (::viewModel.isInitialized) {
+            viewModel.clear()
         }
+        super.onDestroy()
     }
 }

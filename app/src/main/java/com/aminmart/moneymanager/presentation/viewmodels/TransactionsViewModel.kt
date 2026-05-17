@@ -6,9 +6,18 @@ import com.aminmart.moneymanager.domain.usecase.DeleteTransactionUseCase
 import com.aminmart.moneymanager.domain.usecase.GetAllTransactionsUseCase
 import com.aminmart.moneymanager.domain.usecase.GetTransactionByIdUseCase
 import com.aminmart.moneymanager.domain.usecase.UpdateTransactionUseCase
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for Transactions screen
@@ -20,6 +29,8 @@ class TransactionsViewModel(
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val getTransactionByIdUseCase: GetTransactionByIdUseCase
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var loadJob: Job? = null
 
     private val _uiState = MutableStateFlow(TransactionsUiState())
     val uiState: StateFlow<TransactionsUiState> = _uiState.asStateFlow()
@@ -38,26 +49,38 @@ class TransactionsViewModel(
     }
 
     fun loadTransactions() {
-        _uiState.value = _uiState.value.copy(isLoading = true)
+        loadJob?.cancel()
+        loadJob = scope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
 
-        getAllTransactionsUseCase().collectInScope { list ->
-            var filtered = list
+            try {
+                getAllTransactionsUseCase()
+                    .flowOn(Dispatchers.IO)
+                    .collect { list ->
+                        var filtered = list
 
-            // Apply type filter
-            _filterType.value?.let { type ->
-                filtered = filtered.filter { it.type == type }
+                        _filterType.value?.let { type ->
+                            filtered = filtered.filter { it.type == type }
+                        }
+
+                        _filterCategory.value?.let { category ->
+                            filtered = filtered.filter { it.category == category }
+                        }
+
+                        _transactions.value = filtered
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = null
+                        )
+                    }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to load transactions"
+                )
             }
-
-            // Apply category filter
-            _filterCategory.value?.let { category ->
-                filtered = filtered.filter { it.category == category }
-            }
-
-            _transactions.value = filtered
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                error = null
-            )
         }
     }
 
@@ -78,29 +101,27 @@ class TransactionsViewModel(
     }
 
     suspend fun addTransaction(transaction: Transaction): Long {
-        return addTransactionUseCase(transaction)
+        return withContext(Dispatchers.IO) { addTransactionUseCase(transaction) }
     }
 
     suspend fun updateTransaction(transaction: Transaction) {
-        updateTransactionUseCase(transaction)
+        withContext(Dispatchers.IO) { updateTransactionUseCase(transaction) }
     }
 
     suspend fun deleteTransaction(id: Long) {
-        deleteTransactionUseCase(id)
+        withContext(Dispatchers.IO) { deleteTransactionUseCase(id) }
     }
 
     suspend fun getTransaction(id: Long): Transaction? {
-        return getTransactionByIdUseCase(id)
+        return withContext(Dispatchers.IO) { getTransactionByIdUseCase(id) }
     }
 
     fun getCategories(): List<String> {
         return _transactions.value.map { it.category }.distinct()
     }
 
-    private inline fun <T> kotlinx.coroutines.flow.Flow<T>.collectInScope(crossinline action: suspend (T) -> Unit) {
-        kotlinx.coroutines.runBlocking {
-            collect { action(it) }
-        }
+    fun clear() {
+        scope.cancel()
     }
 }
 
