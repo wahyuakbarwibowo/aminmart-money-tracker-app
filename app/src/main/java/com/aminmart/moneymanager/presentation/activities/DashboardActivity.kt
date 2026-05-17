@@ -173,7 +173,7 @@ class DashboardActivity : BottomNavigationActivity() {
             "-${currencyFormat.format(transaction.amount)}"
         }
         
-        val dateFormat = java.text.SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
+        val dateFormat = java.text.SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("id", "ID"))
         val dateStr = dateFormat.format(java.util.Date(transaction.date))
 
         return """

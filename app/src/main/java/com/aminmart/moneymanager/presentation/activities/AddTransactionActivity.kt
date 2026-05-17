@@ -18,6 +18,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.widget.doOnTextChanged
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
+import com.aminmart.moneymanager.data.local.CategoryStore
 import com.aminmart.moneymanager.domain.model.Transaction
 import com.aminmart.moneymanager.presentation.ui.formatWholeAmount
 import com.aminmart.moneymanager.presentation.ui.parseWholeAmount
@@ -41,6 +42,7 @@ class AddTransactionActivity : AppCompatActivity() {
 
     private lateinit var app: MoneyManagerApplication
     private lateinit var viewModel: AddTransactionViewModel
+    private lateinit var categoryStore: CategoryStore
 
     private lateinit var toolbar: Toolbar
     private lateinit var radioType: RadioGroup
@@ -69,6 +71,8 @@ class AddTransactionActivity : AppCompatActivity() {
             app.addTransactionUseCase,
             app.updateTransactionUseCase
         )
+        categoryStore = CategoryStore(this)
+        refreshCategories()
 
         transactionId = intent.getLongExtra("transaction_id", 0L)
         if (transactionId != 0L) {
@@ -78,6 +82,13 @@ class AddTransactionActivity : AppCompatActivity() {
         initViews()
         setupListeners()
         observeData()
+    }
+
+    private fun refreshCategories() {
+        viewModel.updateCategories(
+            income = categoryStore.getIncomeCategories(),
+            expense = categoryStore.getExpenseCategories()
+        )
     }
 
     private fun initViews() {
@@ -249,6 +260,11 @@ class AddTransactionActivity : AppCompatActivity() {
     override fun onDestroy() {
         activityScope.cancel()
         super.onDestroy()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshCategories()
     }
 
     private fun <T> Flow<T>.collectInScope(action: suspend (T) -> Unit) {

@@ -35,8 +35,8 @@ class AddTransactionViewModel(
         )
     )
     val transactionState: StateFlow<Transaction> = _transactionState.asStateFlow()
-    val incomeCategories = Category.DEFAULT_INCOME_CATEGORIES.map { it.name }
-    val expenseCategories = Category.DEFAULT_EXPENSE_CATEGORIES.map { it.name }
+    private var incomeCategories = Category.DEFAULT_INCOME_CATEGORIES.map { it.name }
+    private var expenseCategories = Category.DEFAULT_EXPENSE_CATEGORIES.map { it.name }
 
     val currentCategories: List<String>
         get() = if (_transactionState.value.type == Transaction.TransactionType.INCOME) {
@@ -55,6 +55,22 @@ class AddTransactionViewModel(
             type = type,
             category = newCategory ?: ""
         )
+    }
+
+    fun updateCategories(income: List<String>, expense: List<String>) {
+        incomeCategories = income.ifEmpty { Category.DEFAULT_INCOME_CATEGORIES.map { it.name } }
+        expenseCategories = expense.ifEmpty { Category.DEFAULT_EXPENSE_CATEGORIES.map { it.name } }
+
+        val current = _transactionState.value
+        val validCategories = if (current.type == Transaction.TransactionType.INCOME) {
+            incomeCategories
+        } else {
+            expenseCategories
+        }
+
+        if (current.category !in validCategories) {
+            _transactionState.value = current.copy(category = validCategories.firstOrNull().orEmpty())
+        }
     }
 
     fun setAmount(amount: Double) {

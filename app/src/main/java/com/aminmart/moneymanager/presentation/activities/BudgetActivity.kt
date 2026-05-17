@@ -14,8 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
+import com.aminmart.moneymanager.data.local.CategoryStore
 import com.aminmart.moneymanager.domain.model.Budget
-import com.aminmart.moneymanager.domain.model.Category
 import com.aminmart.moneymanager.presentation.adapters.BudgetAdapter
 import com.aminmart.moneymanager.presentation.ui.formatWholeAmount
 import com.aminmart.moneymanager.presentation.ui.parseWholeAmount
@@ -34,6 +34,7 @@ class BudgetActivity : BottomNavigationActivity() {
 
     private lateinit var app: MoneyManagerApplication
     private lateinit var viewModel: BudgetViewModel
+    private lateinit var categoryStore: CategoryStore
 
     private lateinit var toolbar: Toolbar
     private lateinit var textMonth: TextView
@@ -61,6 +62,7 @@ class BudgetActivity : BottomNavigationActivity() {
             app.deleteBudgetUseCase,
             app.getBudgetByCategoryUseCase
         )
+        categoryStore = CategoryStore(this)
 
         initViews()
         setupRecyclerView()
@@ -184,7 +186,7 @@ class BudgetActivity : BottomNavigationActivity() {
         val editAmount = view.findViewById<EditText>(R.id.edit_budget_amount)
 
         // Setup category dropdown
-        val categories = Category.DEFAULT_EXPENSE_CATEGORIES.map { it.name }
+        val categories = categoryStore.getExpenseCategories()
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, categories)
         editCategory.setAdapter(adapter)
 
