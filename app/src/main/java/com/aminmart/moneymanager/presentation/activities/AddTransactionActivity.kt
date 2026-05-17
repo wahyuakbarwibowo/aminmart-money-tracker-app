@@ -1,6 +1,7 @@
 package com.aminmart.moneymanager.presentation.activities
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.ArrayAdapter
@@ -18,6 +19,8 @@ import androidx.core.widget.doOnTextChanged
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
 import com.aminmart.moneymanager.domain.model.Transaction
+import com.aminmart.moneymanager.presentation.ui.formatWholeAmount
+import com.aminmart.moneymanager.presentation.ui.parseWholeAmount
 import com.aminmart.moneymanager.presentation.viewmodels.AddTransactionViewModel
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
@@ -51,9 +54,10 @@ class AddTransactionActivity : AppCompatActivity() {
     private lateinit var ribaSwitch: SwitchMaterial
     private lateinit var buttonSave: Button
 
-    private val dateFormat = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault())
+    private val dateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("id", "ID"))
     private var transactionId: Long = 0L
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var isBindingAmount = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,7 +109,13 @@ class AddTransactionActivity : AppCompatActivity() {
         }
 
         editAmount.doOnTextChanged { text, _, _, _ ->
-            viewModel.setAmount(text.toString().toDoubleOrNull() ?: 0.0)
+            if (!isBindingAmount) {
+                viewModel.setAmount(parseWholeAmount(text) ?: 0.0)
+            }
+        }
+
+        categoryDropdown.doOnTextChanged { text, _, _, _ ->
+            viewModel.setCategory(text?.toString().orEmpty())
         }
 
         editDescription.doOnTextChanged { text, _, _, _ ->
@@ -116,9 +126,7 @@ class AddTransactionActivity : AppCompatActivity() {
             viewModel.setRiba(isChecked)
         }
 
-        buttonDate.setOnClickListener {
-            showDatePicker()
-        }
+        buttonDate.setOnClickListener { showDateTimePicker() }
 
         buttonSave.setOnClickListener {
             saveTransaction()
@@ -127,10 +135,7 @@ class AddTransactionActivity : AppCompatActivity() {
 
     private fun observeData() {
         viewModel.transactionState.collectInScope { transaction ->
-            // Update UI based on the central transaction state
-            if (editAmount.text.toString() != transaction.amount.toString() && transaction.amount > 0) {
-                editAmount.setText(transaction.amount.toString())
-            }
+            renderAmount(transaction.amount)
             if (editDescription.text.toString() != transaction.description) {
                 editDescription.setText(transaction.description)
             }
@@ -159,6 +164,22 @@ class AddTransactionActivity : AppCompatActivity() {
         }
     }
 
+    private fun renderAmount(amount: Double) {
+        if (editAmount.isFocused) {
+            return
+        }
+
+        val formattedAmount = formatWholeAmount(amount)
+        if (editAmount.text?.toString() == formattedAmount) {
+            return
+        }
+
+        isBindingAmount = true
+        editAmount.setText(formattedAmount)
+        editAmount.setSelection(formattedAmount.length)
+        isBindingAmount = false
+    }
+
     private fun updateCategoryDropdown(selectedCategory: String) {
         val categories = viewModel.currentCategories
         val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, categories)
@@ -173,7 +194,7 @@ class AddTransactionActivity : AppCompatActivity() {
         }
     }
 
-    private fun showDatePicker() {
+    private fun showDateTimePicker() {
         val calendar = Calendar.getInstance().apply {
             timeInMillis = viewModel.transactionState.value.date
         }
@@ -181,11 +202,27 @@ class AddTransactionActivity : AppCompatActivity() {
             this,
             { _, year, month, dayOfMonth ->
                 calendar.set(year, month, dayOfMonth)
-                viewModel.setDate(calendar.timeInMillis)
+                showTimePicker(calendar)
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun showTimePicker(calendar: Calendar) {
+        TimePickerDialog(
+            this,
+            { _, hourOfDay, minute ->
+                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                calendar.set(Calendar.MINUTE, minute)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                viewModel.setDate(calendar.timeInMillis)
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true
         ).show()
     }
 

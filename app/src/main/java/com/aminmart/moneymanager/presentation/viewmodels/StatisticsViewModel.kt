@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 /**
  * ViewModel for Statistics/Charts screen
@@ -63,7 +64,7 @@ class StatisticsViewModel(
                     }
 
                     launch {
-                        getMonthlyExpensesUseCase(12)
+                        getMonthlyExpensesUseCase(getTrendMonthCount(_selectedPeriod.value))
                             .flowOn(Dispatchers.IO)
                             .collect { data ->
                                 _monthlyData.value = data
@@ -93,6 +94,35 @@ class StatisticsViewModel(
     fun getCategoryPercentage(category: String): Float {
         val total = getTotalExpense()
         return if (total > 0) ((_categoryData.value[category] ?: 0.0) / total).toFloat() else 0f
+    }
+
+    fun getTopCategory(): Pair<String, Double>? {
+        return _categoryData.value.maxByOrNull { it.value }?.toPair()
+    }
+
+    fun getCategoryCount(): Int {
+        return _categoryData.value.size
+    }
+
+    fun getAverageMonthlyExpense(): Double {
+        if (_monthlyData.value.isEmpty()) {
+            return 0.0
+        }
+        return _monthlyData.value.values.sum() / max(_monthlyData.value.size, 1)
+    }
+
+    fun getPeakMonth(): Pair<String, Double>? {
+        return _monthlyData.value.maxByOrNull { it.value }?.toPair()
+    }
+
+    fun getSelectedPeriodLabel(): String {
+        return when (_selectedPeriod.value) {
+            StatisticsPeriod.CURRENT_MONTH -> "Current Month"
+            StatisticsPeriod.LAST_MONTH -> "Last Month"
+            StatisticsPeriod.LAST_3_MONTHS -> "Last 3 Months"
+            StatisticsPeriod.LAST_6_MONTHS -> "Last 6 Months"
+            StatisticsPeriod.CURRENT_YEAR -> "Current Year"
+        }
     }
 
     private fun getPeriodDates(period: StatisticsPeriod): Pair<Long, Long> {
@@ -150,6 +180,16 @@ class StatisticsViewModel(
         cal.set(java.util.Calendar.SECOND, 59)
         cal.set(java.util.Calendar.MILLISECOND, 999)
         return cal.timeInMillis
+    }
+
+    private fun getTrendMonthCount(period: StatisticsPeriod): Int {
+        return when (period) {
+            StatisticsPeriod.CURRENT_MONTH -> 4
+            StatisticsPeriod.LAST_MONTH -> 4
+            StatisticsPeriod.LAST_3_MONTHS -> 3
+            StatisticsPeriod.LAST_6_MONTHS -> 6
+            StatisticsPeriod.CURRENT_YEAR -> 12
+        }
     }
 
     fun clear() {

@@ -8,6 +8,8 @@ import androidx.appcompat.widget.Toolbar
 import com.aminmart.moneymanager.MoneyManagerApplication
 import com.aminmart.moneymanager.R
 import com.aminmart.moneymanager.domain.model.Debt
+import com.aminmart.moneymanager.presentation.ui.formatWholeAmount
+import com.aminmart.moneymanager.presentation.ui.parseWholeAmount
 import com.aminmart.moneymanager.presentation.viewmodels.DebtViewModel
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
@@ -106,7 +108,7 @@ class AddDebtActivity : AppCompatActivity() {
             editingDebt = viewModel.getDebt(debtId)
             editingDebt?.let { debt ->
                 personNameEditText.setText(debt.personName)
-                amountEditText.setText(debt.amount.toString())
+                amountEditText.setText(formatWholeAmount(debt.amount))
                 descriptionEditText.setText(debt.description)
                 paidSwitch.isChecked = debt.isPaid
                 dueDateCalendar.timeInMillis = debt.dueDate
@@ -124,7 +126,7 @@ class AddDebtActivity : AppCompatActivity() {
 
     private fun saveDebt() {
         val name = personNameEditText.text.toString()
-        val amount = amountEditText.text.toString().toDoubleOrNull()
+        val amount = parseWholeAmount(amountEditText.text)
 
         if (name.isBlank()) {
             Toast.makeText(this, "Person name cannot be empty", Toast.LENGTH_SHORT).show()

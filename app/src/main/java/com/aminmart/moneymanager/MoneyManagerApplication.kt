@@ -68,6 +68,8 @@ class MoneyManagerApplication : Application() {
         private set
     lateinit var getMonthlyExpensesUseCase: GetMonthlyExpensesUseCase
         private set
+    lateinit var syncBudgetSpentUseCase: SyncBudgetSpentUseCase
+        private set
 
     // Use Cases - Budget
     lateinit var getAllBudgetsUseCase: GetAllBudgetsUseCase
@@ -133,13 +135,14 @@ class MoneyManagerApplication : Application() {
         debtRepository = DebtRepositoryImpl(database)
 
         // Initialize Use Cases - Transactions
+        syncBudgetSpentUseCase = SyncBudgetSpentUseCase(transactionRepository, budgetRepository)
         getAllTransactionsUseCase = GetAllTransactionsUseCase(transactionRepository)
         getRecentTransactionsUseCase = GetRecentTransactionsUseCase(transactionRepository)
         getTransactionsByMonthUseCase = GetTransactionsByMonthUseCase(transactionRepository)
         getTransactionsByCategoryUseCase = GetTransactionsByCategoryUseCase(transactionRepository)
-        addTransactionUseCase = AddTransactionUseCase(transactionRepository)
-        updateTransactionUseCase = UpdateTransactionUseCase(transactionRepository)
-        deleteTransactionUseCase = DeleteTransactionUseCase(transactionRepository)
+        addTransactionUseCase = AddTransactionUseCase(transactionRepository, syncBudgetSpentUseCase)
+        updateTransactionUseCase = UpdateTransactionUseCase(transactionRepository, syncBudgetSpentUseCase)
+        deleteTransactionUseCase = DeleteTransactionUseCase(transactionRepository, syncBudgetSpentUseCase)
         getTransactionByIdUseCase = GetTransactionByIdUseCase(transactionRepository)
         getDashboardStatsUseCase = GetDashboardStatsUseCase(transactionRepository, budgetRepository)
         getExpenseByCategoryUseCase = GetExpenseByCategoryUseCase(transactionRepository)

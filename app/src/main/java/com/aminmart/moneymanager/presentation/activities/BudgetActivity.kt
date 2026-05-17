@@ -17,6 +17,8 @@ import com.aminmart.moneymanager.R
 import com.aminmart.moneymanager.domain.model.Budget
 import com.aminmart.moneymanager.domain.model.Category
 import com.aminmart.moneymanager.presentation.adapters.BudgetAdapter
+import com.aminmart.moneymanager.presentation.ui.formatWholeAmount
+import com.aminmart.moneymanager.presentation.ui.parseWholeAmount
 import com.aminmart.moneymanager.presentation.viewmodels.BudgetViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -191,7 +193,7 @@ class BudgetActivity : BottomNavigationActivity() {
             .setView(view)
             .setPositiveButton("Save") { _, _ ->
                 val category = editCategory.text.toString()
-                val amount = editAmount.text.toString().toDoubleOrNull()
+                val amount = parseWholeAmount(editAmount.text)
                 
                 if (category.isNotEmpty() && amount != null && amount > 0) {
                     val budget = Budget(
@@ -215,13 +217,13 @@ class BudgetActivity : BottomNavigationActivity() {
         val editAmount = view.findViewById<EditText>(R.id.edit_budget_amount)
 
         editCategory.setText(budget.category, false)
-        editAmount.setText(budget.monthlyBudget.toString())
+        editAmount.setText(formatWholeAmount(budget.monthlyBudget))
 
         AlertDialog.Builder(this)
             .setTitle("Edit Budget")
             .setView(view)
             .setPositiveButton("Save") { _, _ ->
-                val amount = editAmount.text.toString().toDoubleOrNull()
+                val amount = parseWholeAmount(editAmount.text)
                 
                 if (amount != null && amount > 0) {
                     val updatedBudget = budget.copy(
