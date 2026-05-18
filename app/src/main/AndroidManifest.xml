@@ -57,6 +57,9 @@
             android:name=".presentation.activities.SettingsActivity"
             android:exported="false" />
         <activity
+            android:name=".presentation.activities.DataManagementActivity"
+            android:exported="false" />
+        <activity
             android:name=".presentation.activities.ManageCategoriesActivity"
             android:exported="false" />
 

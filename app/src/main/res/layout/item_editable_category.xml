@@ -12,7 +12,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="Category"
+        android:text="@string/category"
         android:textColor="@color/text_primary"
         android:textSize="15sp" />
 
@@ -23,7 +23,7 @@
         android:backgroundTint="@color/white"
         android:minWidth="0dp"
         android:textAllCaps="false"
-        android:text="Delete"
+        android:text="@string/delete"
         android:textColor="@color/expense_red"
         app:cornerRadius="10dp"
         app:strokeColor="@color/expense_red"

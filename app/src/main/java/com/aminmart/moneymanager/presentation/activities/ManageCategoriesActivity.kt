@@ -54,7 +54,7 @@ class ManageCategoriesActivity : AppCompatActivity() {
         textExpenseEmpty = findViewById(R.id.text_expense_empty)
 
         setSupportActionBar(toolbar)
-        supportActionBar?.title = "Manage Categories"
+        supportActionBar?.title = getString(R.string.manage_categories)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
@@ -95,7 +95,7 @@ class ManageCategoriesActivity : AppCompatActivity() {
     private fun addCategory(type: Transaction.TransactionType, name: String) {
         val success = categoryStore.addCategory(type, name)
         if (!success) {
-            Toast.makeText(this, "Category invalid or already exists", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.category_invalid_or_exists), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -110,7 +110,7 @@ class ManageCategoriesActivity : AppCompatActivity() {
     private fun removeCategory(type: Transaction.TransactionType, name: String) {
         val success = categoryStore.removeCategory(type, name)
         if (!success) {
-            Toast.makeText(this, "At least one category must remain", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.at_least_one_category_remain), Toast.LENGTH_SHORT).show()
             return
         }
         refreshLists()

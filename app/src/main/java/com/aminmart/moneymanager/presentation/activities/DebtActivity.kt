@@ -71,7 +71,7 @@ class DebtActivity : AppCompatActivity() {
 
     private fun setupToolbar() {
         setSupportActionBar(toolbar)
-        supportActionBar?.title = "Utang Piutang"
+        supportActionBar?.title = getString(R.string.debt_credit_title)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
@@ -103,8 +103,8 @@ class DebtActivity : AppCompatActivity() {
     }
 
     private fun showOptionsDialog(debt: Debt) {
-        val togglePaidOption = if (debt.isPaid) "Mark as Unpaid" else "Mark as Paid"
-        val options = arrayOf("Edit", "Delete", togglePaidOption)
+        val togglePaidOption = if (debt.isPaid) getString(R.string.mark_as_unpaid) else getString(R.string.mark_as_paid)
+        val options = arrayOf(getString(R.string.edit), getString(R.string.delete), togglePaidOption)
 
         AlertDialog.Builder(this)
             .setTitle(debt.personName)
@@ -120,12 +120,12 @@ class DebtActivity : AppCompatActivity() {
 
     private fun confirmDelete(debt: Debt) {
         AlertDialog.Builder(this)
-            .setTitle("Delete Debt")
-            .setMessage("Are you sure you want to delete this record?")
-            .setPositiveButton("Delete") { _, _ ->
+            .setTitle(getString(R.string.delete_debt))
+            .setMessage(getString(R.string.confirm_delete_debt_record))
+            .setPositiveButton(getString(R.string.delete)) { _, _ ->
                 viewModel.deleteDebt(debt)
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 
