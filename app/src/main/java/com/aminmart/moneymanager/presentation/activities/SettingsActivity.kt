@@ -114,6 +114,9 @@ class SettingsActivity : BottomNavigationActivity() {
         findViewById<View>(R.id.button_settings_export_report).setOnClickListener {
             startActivity(Intent(this, ExportReportActivity::class.java))
         }
+        findViewById<View>(R.id.button_settings_debt_credit).setOnClickListener {
+            startActivity(Intent(this, DebtActivity::class.java))
+        }
         findViewById<View>(R.id.button_settings_manage_categories).setOnClickListener {
             startActivity(Intent(this, ManageCategoriesActivity::class.java))
         }
