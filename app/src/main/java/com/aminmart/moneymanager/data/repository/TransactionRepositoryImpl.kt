@@ -30,6 +30,20 @@ class TransactionRepositoryImpl(
     override fun getRecentTransactions(limit: Int): Flow<List<Transaction>> =
         database.getRecentTransactions(limit)
 
+    override suspend fun getTransactionsPage(
+        limit: Int,
+        offset: Int,
+        type: Transaction.TransactionType?,
+        category: String?
+    ): List<Transaction> =
+        database.getTransactionsPage(limit, offset, type, category)
+
+    override suspend fun getTransactionsCount(
+        type: Transaction.TransactionType?,
+        category: String?
+    ): Int =
+        database.getTransactionsCount(type, category)
+
     override suspend fun getTransactionById(id: Long): Transaction? =
         database.getTransactionById(id)
 

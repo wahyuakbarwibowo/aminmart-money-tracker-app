@@ -42,3 +42,23 @@ class GetTransactionsByCategoryUseCase(
     operator fun invoke(category: String): Flow<List<Transaction>> = 
         repository.getTransactionsByCategory(category)
 }
+
+class GetTransactionsPageUseCase(
+    private val repository: TransactionRepository
+) {
+    suspend operator fun invoke(
+        limit: Int,
+        offset: Int,
+        type: Transaction.TransactionType? = null,
+        category: String? = null
+    ): List<Transaction> = repository.getTransactionsPage(limit, offset, type, category)
+}
+
+class GetTransactionsCountUseCase(
+    private val repository: TransactionRepository
+) {
+    suspend operator fun invoke(
+        type: Transaction.TransactionType? = null,
+        category: String? = null
+    ): Int = repository.getTransactionsCount(type, category)
+}

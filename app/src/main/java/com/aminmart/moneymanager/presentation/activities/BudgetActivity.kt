@@ -57,7 +57,8 @@ class BudgetActivity : BottomNavigationActivity() {
 
         app = application as MoneyManagerApplication
         viewModel = BudgetViewModel(
-            app.getAllBudgetsUseCase,
+            app.getBudgetsPageUseCase,
+            app.getBudgetsCountUseCase,
             app.saveBudgetUseCase,
             app.deleteBudgetUseCase,
             app.getBudgetByCategoryUseCase
@@ -106,6 +107,16 @@ class BudgetActivity : BottomNavigationActivity() {
         )
         recyclerBudgets.layoutManager = LinearLayoutManager(this)
         recyclerBudgets.adapter = adapter
+        recyclerBudgets.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dy <= 0) return
+                val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                if (lm.findLastVisibleItemPosition() >= lm.itemCount - 5 && viewModel.hasMoreData()) {
+                    viewModel.loadNextPage()
+                }
+            }
+        })
     }
 
     private fun observeData() {
@@ -205,7 +216,7 @@ class BudgetActivity : BottomNavigationActivity() {
                     )
                     activityScope.launch {
                         viewModel.saveBudget(budget)
-                        viewModel.loadBudgets()
+                        viewModel.loadInitialBudgets()
                     }
                 }
             }
@@ -234,7 +245,7 @@ class BudgetActivity : BottomNavigationActivity() {
                     )
                     activityScope.launch {
                         viewModel.saveBudget(updatedBudget)
-                        viewModel.loadBudgets()
+                        viewModel.loadInitialBudgets()
                     }
                 }
             }
@@ -252,7 +263,7 @@ class BudgetActivity : BottomNavigationActivity() {
             .setPositiveButton("Delete") { _, _ ->
                 activityScope.launch {
                     viewModel.deleteBudget(budget.id)
-                    viewModel.loadBudgets()
+                    viewModel.loadInitialBudgets()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -287,7 +298,7 @@ class BudgetActivity : BottomNavigationActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.loadBudgets()
+        viewModel.loadInitialBudgets()
     }
 
     override fun onDestroy() {

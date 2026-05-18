@@ -41,4 +41,10 @@ class BudgetRepositoryImpl(
 
     override suspend fun getTotalSpentForMonth(month: String): Double =
         database.getTotalSpentForMonth(month)
+
+    override suspend fun getBudgetsPage(month: String, limit: Int, offset: Int): List<Budget> =
+        database.getBudgetsPage(month, limit, offset)
+
+    override suspend fun getBudgetsCount(month: String): Int =
+        database.getBudgetsCount(month)
 }

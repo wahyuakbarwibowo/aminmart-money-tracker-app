@@ -71,3 +71,19 @@ class GetBudgetByCategoryUseCase(
         return repository.getBudgetByCategory(category, month)
     }
 }
+
+class GetBudgetsPageUseCase(
+    private val repository: BudgetRepository
+) {
+    suspend operator fun invoke(month: String, limit: Int, offset: Int): List<Budget> {
+        return repository.getBudgetsPage(month, limit, offset)
+    }
+}
+
+class GetBudgetsCountUseCase(
+    private val repository: BudgetRepository
+) {
+    suspend operator fun invoke(month: String): Int {
+        return repository.getBudgetsCount(month)
+    }
+}

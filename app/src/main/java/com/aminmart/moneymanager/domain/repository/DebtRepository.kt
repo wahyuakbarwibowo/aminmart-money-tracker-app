@@ -14,4 +14,8 @@ interface DebtRepository {
     suspend fun updateDebt(debt: Debt)
 
     suspend fun deleteDebt(id: Long)
+
+    suspend fun getDebtsPage(limit: Int, offset: Int): List<Debt>
+
+    suspend fun getDebtsCount(): Int
 }

@@ -490,6 +490,105 @@ class MoneyDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME,
         db.delete(TABLE_DEBTS, "$COL_ID = ?", arrayOf(id.toString()))
     }
 
+    suspend fun getTransactionsPage(
+        limit: Int,
+        offset: Int,
+        type: Transaction.TransactionType?,
+        category: String?
+    ): List<Transaction> {
+        val db = readableDatabase
+        val whereParts = mutableListOf<String>()
+        val args = mutableListOf<String>()
+        type?.let {
+            whereParts.add("$COL_TYPE = ?")
+            args.add(it.name)
+        }
+        category?.let {
+            whereParts.add("$COL_CATEGORY = ?")
+            args.add(it)
+        }
+        val selection = if (whereParts.isEmpty()) null else whereParts.joinToString(" AND ")
+        val cursor = db.query(
+            TABLE_TRANSACTIONS,
+            null,
+            selection,
+            if (args.isEmpty()) null else args.toTypedArray(),
+            null,
+            null,
+            "$COL_DATE DESC",
+            "$offset, $limit"
+        )
+        return cursorToTransactionList(cursor)
+    }
+
+    suspend fun getTransactionsCount(
+        type: Transaction.TransactionType?,
+        category: String?
+    ): Int {
+        val db = readableDatabase
+        val whereParts = mutableListOf<String>()
+        val args = mutableListOf<String>()
+        type?.let {
+            whereParts.add("$COL_TYPE = ?")
+            args.add(it.name)
+        }
+        category?.let {
+            whereParts.add("$COL_CATEGORY = ?")
+            args.add(it)
+        }
+        val whereClause = if (whereParts.isEmpty()) "" else "WHERE ${whereParts.joinToString(" AND ")}"
+        val cursor = db.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_TRANSACTIONS $whereClause",
+            if (args.isEmpty()) null else args.toTypedArray()
+        )
+        return cursor.use { if (it.moveToFirst()) it.getInt(0) else 0 }
+    }
+
+    suspend fun getBudgetsPage(month: String, limit: Int, offset: Int): List<Budget> {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_BUDGETS,
+            null,
+            "$COL_MONTH = ?",
+            arrayOf(month),
+            null,
+            null,
+            "$COL_CATEGORY ASC",
+            "$offset, $limit"
+        )
+        return cursorToBudgetList(cursor)
+    }
+
+    suspend fun getBudgetsCount(month: String): Int {
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT COUNT(*) FROM $TABLE_BUDGETS WHERE $COL_MONTH = ?",
+            arrayOf(month)
+        )
+        return cursor.use { if (it.moveToFirst()) it.getInt(0) else 0 }
+    }
+
+    suspend fun getDebtsPage(limit: Int, offset: Int): List<Debt> {
+        val db = readableDatabase
+        val cursor = db.query(
+            TABLE_DEBTS,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "$COL_DUE_DATE DESC",
+            "$offset, $limit"
+        )
+        return cursorToDebtList(cursor)
+    }
+
+    suspend fun getDebtsCount(): Int {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_DEBTS", null)
+        return cursor.use { if (it.moveToFirst()) it.getInt(0) else 0 }
+    }
+
 
     // ==================== Helper Methods ====================
 

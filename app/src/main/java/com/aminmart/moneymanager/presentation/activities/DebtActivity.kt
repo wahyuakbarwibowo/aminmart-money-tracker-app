@@ -82,6 +82,16 @@ class DebtActivity : AppCompatActivity() {
         recyclerDebts.apply {
             adapter = debtAdapter
             layoutManager = LinearLayoutManager(this@DebtActivity)
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    if (dy <= 0) return
+                    val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                    if (lm.findLastVisibleItemPosition() >= lm.itemCount - 5 && viewModel.hasMoreData()) {
+                        viewModel.loadNextPage()
+                    }
+                }
+            })
         }
     }
 

@@ -40,7 +40,7 @@ class TransactionsActivity : BottomNavigationActivity() {
 
     private val addTransactionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            viewModel.loadTransactions() // Reload data if transaction was added/edited
+            viewModel.loadInitialTransactions()
         }
     }
 
@@ -50,7 +50,8 @@ class TransactionsActivity : BottomNavigationActivity() {
 
         app = application as MoneyManagerApplication
         viewModel = TransactionsViewModel(
-            app.getAllTransactionsUseCase,
+            app.getTransactionsPageUseCase,
+            app.getTransactionsCountUseCase,
             app.addTransactionUseCase,
             app.updateTransactionUseCase,
             app.deleteTransactionUseCase,
@@ -91,6 +92,16 @@ class TransactionsActivity : BottomNavigationActivity() {
         )
         recyclerTransactions.layoutManager = LinearLayoutManager(this)
         recyclerTransactions.adapter = adapter
+        recyclerTransactions.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dy <= 0) return
+                val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                if (lm.findLastVisibleItemPosition() >= lm.itemCount - 5 && viewModel.hasMoreData()) {
+                    viewModel.loadNextPage()
+                }
+            }
+        })
     }
 
     private fun observeData() {
@@ -137,7 +148,7 @@ class TransactionsActivity : BottomNavigationActivity() {
             .setPositiveButton("Delete") { _, _ ->
                 activityScope.launch {
                     viewModel.deleteTransaction(transaction.id)
-                    viewModel.loadTransactions()
+                    viewModel.loadInitialTransactions()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -223,7 +234,7 @@ class TransactionsActivity : BottomNavigationActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.loadTransactions()
+        viewModel.loadInitialTransactions()
     }
 
     override fun onDestroy() {

@@ -28,4 +28,12 @@ class DebtRepositoryImpl(
     override suspend fun deleteDebt(id: Long) {
         db.deleteDebt(id)
     }
+
+    override suspend fun getDebtsPage(limit: Int, offset: Int): List<Debt> {
+        return db.getDebtsPage(limit, offset)
+    }
+
+    override suspend fun getDebtsCount(): Int {
+        return db.getDebtsCount()
+    }
 }

@@ -57,4 +57,8 @@ interface BudgetRepository {
      * Get total spent for a month
      */
     suspend fun getTotalSpentForMonth(month: String): Double
+
+    suspend fun getBudgetsPage(month: String, limit: Int, offset: Int): List<Budget>
+
+    suspend fun getBudgetsCount(month: String): Int
 }

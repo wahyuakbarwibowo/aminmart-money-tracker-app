@@ -38,6 +38,16 @@ interface TransactionRepository {
      * Get recent transactions
      */
     fun getRecentTransactions(limit: Int = 10): Flow<List<Transaction>>
+    suspend fun getTransactionsPage(
+        limit: Int,
+        offset: Int,
+        type: Transaction.TransactionType? = null,
+        category: String? = null
+    ): List<Transaction>
+    suspend fun getTransactionsCount(
+        type: Transaction.TransactionType? = null,
+        category: String? = null
+    ): Int
     
     /**
      * Get transaction by ID

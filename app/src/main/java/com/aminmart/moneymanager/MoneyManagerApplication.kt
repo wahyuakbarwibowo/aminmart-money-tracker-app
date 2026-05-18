@@ -54,6 +54,10 @@ class MoneyManagerApplication : Application() {
         private set
     lateinit var getTransactionsByCategoryUseCase: GetTransactionsByCategoryUseCase
         private set
+    lateinit var getTransactionsPageUseCase: GetTransactionsPageUseCase
+        private set
+    lateinit var getTransactionsCountUseCase: GetTransactionsCountUseCase
+        private set
     lateinit var addTransactionUseCase: AddTransactionUseCase
         private set
     lateinit var updateTransactionUseCase: UpdateTransactionUseCase
@@ -81,6 +85,10 @@ class MoneyManagerApplication : Application() {
     lateinit var deleteBudgetUseCase: DeleteBudgetUseCase
         private set
     lateinit var getBudgetByCategoryUseCase: GetBudgetByCategoryUseCase
+        private set
+    lateinit var getBudgetsPageUseCase: GetBudgetsPageUseCase
+        private set
+    lateinit var getBudgetsCountUseCase: GetBudgetsCountUseCase
         private set
 
     // Use Cases - Import
@@ -140,6 +148,8 @@ class MoneyManagerApplication : Application() {
         getRecentTransactionsUseCase = GetRecentTransactionsUseCase(transactionRepository)
         getTransactionsByMonthUseCase = GetTransactionsByMonthUseCase(transactionRepository)
         getTransactionsByCategoryUseCase = GetTransactionsByCategoryUseCase(transactionRepository)
+        getTransactionsPageUseCase = GetTransactionsPageUseCase(transactionRepository)
+        getTransactionsCountUseCase = GetTransactionsCountUseCase(transactionRepository)
         addTransactionUseCase = AddTransactionUseCase(transactionRepository, syncBudgetSpentUseCase)
         updateTransactionUseCase = UpdateTransactionUseCase(transactionRepository, syncBudgetSpentUseCase)
         deleteTransactionUseCase = DeleteTransactionUseCase(transactionRepository, syncBudgetSpentUseCase)
@@ -154,6 +164,8 @@ class MoneyManagerApplication : Application() {
         saveBudgetUseCase = SaveBudgetUseCase(budgetRepository)
         deleteBudgetUseCase = DeleteBudgetUseCase(budgetRepository)
         getBudgetByCategoryUseCase = GetBudgetByCategoryUseCase(budgetRepository)
+        getBudgetsPageUseCase = GetBudgetsPageUseCase(budgetRepository)
+        getBudgetsCountUseCase = GetBudgetsCountUseCase(budgetRepository)
 
         // Initialize Use Cases - Import
         importCsvUseCase = ImportCsvUseCase(csvImportRepository, importHistoryRepository)
@@ -175,6 +187,8 @@ class MoneyManagerApplication : Application() {
         // Initialize Use Cases - Debt
         debtUseCases = DebtUseCases(
             getAllDebts = GetAllDebts(debtRepository),
+            getDebtsPage = GetDebtsPage(debtRepository),
+            getDebtsCount = GetDebtsCount(debtRepository),
             getDebtById = GetDebtById(debtRepository),
             addDebt = AddDebt(debtRepository),
             updateDebt = UpdateDebt(debtRepository),
